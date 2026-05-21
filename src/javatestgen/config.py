@@ -11,6 +11,7 @@ class RunConfig:
     target_coverage: float = 0.80
     max_repairs: int = 3
     sample_tests: int = 3
+    target_class: str | None = None
     test_suffix: str = "Test"
     rules_file: Path | None = None
     model: str | None = None

@@ -23,6 +23,11 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--target-coverage", type=float, default=0.80, help="Required line coverage ratio.")
     run.add_argument("--max-repairs", type=int, default=3, help="Repair attempts per generated test.")
     run.add_argument("--sample-tests", type=int, default=3, help="Existing test files to include as style examples.")
+    run.add_argument(
+        "--target-class",
+        default=None,
+        help="Optional fully qualified or simple class name to generate tests for instead of auto-selecting.",
+    )
     run.add_argument("--test-suffix", default="Test", help="Generated test class suffix.")
     run.add_argument("--rules-file", type=Path, default=None, help="Optional project-specific rules for generated tests.")
     run.add_argument("--model", default=None, help="Override OPENAI_MODEL.")
@@ -41,6 +46,7 @@ def main(argv: list[str] | None = None) -> int:
         target_coverage=args.target_coverage,
         max_repairs=args.max_repairs,
         sample_tests=args.sample_tests,
+        target_class=args.target_class,
         test_suffix=args.test_suffix,
         rules_file=args.rules_file.resolve() if args.rules_file else None,
         model=args.model,

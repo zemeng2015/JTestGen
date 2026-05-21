@@ -7,7 +7,7 @@ from .config import RunConfig
 from .context import build_prompt_context
 from .coverage import ClassCoverage, parse_class_coverages, parse_jacoco_xml, pick_lowest_coverage_class
 from .generator import GenerationError, OpenAICompatibleGenerator
-from .java_source import JavaClass, discover_java_classes, find_java_class
+from .java_source import JavaClass, discover_java_classes, find_java_class, find_java_class_by_name
 from .prompting import build_initial_request, build_repair_request
 from .runner import MavenRunner
 
@@ -83,6 +83,12 @@ class TestGenerationWorkflow:
         classes: list[JavaClass],
         coverages: list[ClassCoverage],
     ) -> tuple[JavaClass, ClassCoverage] | None:
+        if self.config.target_class:
+            java_class = find_java_class_by_name(classes, self.config.target_class)
+            if java_class is None:
+                raise ValueError(f"--target-class was not found under {self.config.main_source_root}: {self.config.target_class}")
+            return java_class, self._find_class_coverage(java_class, coverages)
+
         remaining = coverages[:]
         while remaining:
             coverage = pick_lowest_coverage_class(remaining)

@@ -71,6 +71,21 @@ def find_java_class(classes: list[JavaClass], qualified_name: str, source_file: 
     return None
 
 
+def find_java_class_by_name(classes: list[JavaClass], name: str) -> JavaClass | None:
+    normalized = name.strip()
+    matches = [
+        java_class
+        for java_class in classes
+        if java_class.qualified_name == normalized or java_class.type_name == normalized
+    ]
+    if len(matches) == 1:
+        return matches[0]
+    if len(matches) > 1:
+        names = ", ".join(java_class.qualified_name for java_class in matches)
+        raise ValueError(f"Ambiguous --target-class {name!r}. Matches: {names}")
+    return None
+
+
 def _match(pattern: re.Pattern[str], text: str) -> str | None:
     found = pattern.search(text)
     return found.group(1) if found else None

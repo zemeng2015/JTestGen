@@ -53,6 +53,12 @@ Generate one coverage-guided test and run the repair loop:
 java-testgen run C:\path\to\java-project
 ```
 
+For a demo, you can force a known class instead of using automatic lowest-coverage selection:
+
+```powershell
+java-testgen run C:\path\to\java-project --target-class com.example.OrderService
+```
+
 Dry-run prompts without writing files or running Maven:
 
 ```powershell
@@ -66,6 +72,7 @@ Useful options:
 --target-coverage  Minimum line coverage ratio, default 0.80
 --max-repairs      Repair attempts for the generated test, default 3
 --sample-tests      Existing test files to include as examples, default 3
+--target-class      Optional fully qualified or simple class name for demo control
 --rules-file        Optional file containing project-specific rules
 --test-suffix      Generated test class suffix, default Test
 --model            Override OPENAI_MODEL

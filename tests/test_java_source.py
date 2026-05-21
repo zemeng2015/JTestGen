@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from javatestgen.java_source import discover_java_classes
+from javatestgen.java_source import discover_java_classes, find_java_class_by_name
 
 
 class JavaSourceTests(unittest.TestCase):
@@ -23,6 +23,30 @@ class JavaSourceTests(unittest.TestCase):
         self.assertEqual(
             classes[0].test_relative_path("Test"),
             Path("com") / "example" / "CalculatorTest.java",
+        )
+
+    def test_finds_class_by_simple_or_qualified_name(self) -> None:
+        java_class = self._java_class("com.example", "OrderService")
+
+        self.assertIs(find_java_class_by_name([java_class], "OrderService"), java_class)
+        self.assertIs(find_java_class_by_name([java_class], "com.example.OrderService"), java_class)
+
+    def test_target_class_simple_name_must_not_be_ambiguous(self) -> None:
+        first = self._java_class("com.example", "OrderService")
+        second = self._java_class("org.example", "OrderService")
+
+        with self.assertRaises(ValueError):
+            find_java_class_by_name([first, second], "OrderService")
+
+    def _java_class(self, package: str, type_name: str):
+        from javatestgen.java_source import JavaClass
+
+        return JavaClass(
+            source_path=Path(f"{type_name}.java"),
+            relative_path=Path(f"{type_name}.java"),
+            source="",
+            package=package,
+            type_name=type_name,
         )
 
 
