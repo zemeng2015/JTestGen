@@ -14,6 +14,7 @@ class RunConfig:
     target_class: str | None = None
     test_suffix: str = "Test"
     rules_file: Path | None = None
+    maven_command: str | None = None
     model: str | None = None
     dry_run: bool = False
 

@@ -74,6 +74,7 @@ Useful options:
 --sample-tests      Existing test files to include as examples, default 3
 --target-class      Optional fully qualified or simple class name for demo control
 --rules-file        Optional file containing project-specific rules
+--maven-command     Maven executable, for example mvn.cmd or C:\path\to\mvn.cmd
 --test-suffix      Generated test class suffix, default Test
 --model            Override OPENAI_MODEL
 ```
