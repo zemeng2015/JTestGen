@@ -1,0 +1,12 @@
+[project]
+name = "java-testgen-repair"
+version = "0.1.0"
+description = "Generate Java unit tests, measure JaCoCo coverage, and repair failing tests in a loop."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Local" }]
+dependencies = []
+
+[project.scripts]
+java-testgen = "javatestgen.cli:main"
+
