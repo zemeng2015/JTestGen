@@ -122,10 +122,18 @@ class TestGenerationWorkflow:
         context = build_prompt_context(
             project=self.config.project,
             target=java_class,
+            generated_test_path=test_path,
             rules_file=self.config.rules_file,
             sample_limit=self.config.sample_tests,
         )
-        request = build_initial_request(java_class, test_class_name, coverage, context)
+        relative_test_path = str(test_path.relative_to(self.config.project))
+        request = build_initial_request(
+            java_class=java_class,
+            test_class_name=test_class_name,
+            test_path=relative_test_path,
+            coverage=coverage,
+            context=context,
+        )
 
         print(f"Generating {test_path.relative_to(self.config.project)} for {java_class.qualified_name}")
         if self.config.dry_run:
@@ -158,6 +166,8 @@ class TestGenerationWorkflow:
                 current_test_source=current_test,
                 maven_output=result.output,
                 test_class_name=test_class_name,
+                test_path=relative_test_path,
+                test_command=self.runner.test_generated_class_command(test_class_name),
                 coverage=coverage,
                 context=context,
             )

@@ -18,15 +18,24 @@ class CommandResult:
 
 
 class MavenRunner:
-    def __init__(self, project: Path, maven_command: str | None = None) -> None:
+    def __init__(
+        self,
+        project: Path,
+        maven_command: str | None = None,
+        verify_args: tuple[str, ...] = (),
+    ) -> None:
         self.project = project
         self.maven_command = resolve_maven_command(maven_command)
+        self.verify_args = list(verify_args)
 
     def verify(self) -> CommandResult:
-        return self._run([self.maven_command, "-q", "verify"])
+        return self._run([self.maven_command, "-q", *self.verify_args, "verify"])
 
     def test_generated_class(self, test_class_name: str) -> CommandResult:
-        return self._run([self.maven_command, "-q", f"-Dtest={test_class_name}", "test"])
+        return self._run([self.maven_command, "-q", *self.verify_args, f"-Dtest={test_class_name}", "test"])
+
+    def test_generated_class_command(self, test_class_name: str) -> str:
+        return " ".join([self.maven_command, "-q", *self.verify_args, f"-Dtest={test_class_name}", "test"])
 
     def _run(self, command: list[str]) -> CommandResult:
         completed = subprocess.run(

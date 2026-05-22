@@ -15,6 +15,7 @@ class RunConfig:
     test_suffix: str = "Test"
     rules_file: Path | None = None
     maven_command: str | None = None
+    verify_args: tuple[str, ...] = ()
     model: str | None = None
     dry_run: bool = False
 

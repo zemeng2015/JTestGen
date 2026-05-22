@@ -31,6 +31,12 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--test-suffix", default="Test", help="Generated test class suffix.")
     run.add_argument("--rules-file", type=Path, default=None, help="Optional project-specific rules for generated tests.")
     run.add_argument("--maven-command", default=None, help="Maven executable to use, for example mvn.cmd or C:\\path\\to\\mvn.cmd.")
+    run.add_argument(
+        "--verify-arg",
+        action="append",
+        default=[],
+        help="Extra Maven argument for baseline/final verify. Repeat as needed, for example --verify-arg=-DskipITs.",
+    )
     run.add_argument("--model", default=None, help="Override OPENAI_MODEL.")
     run.add_argument("--dry-run", action="store_true", help="Print prompts without writing or running tests.")
     return parser
@@ -51,6 +57,7 @@ def main(argv: list[str] | None = None) -> int:
         test_suffix=args.test_suffix,
         rules_file=args.rules_file.resolve() if args.rules_file else None,
         maven_command=args.maven_command,
+        verify_args=tuple(args.verify_arg),
         model=args.model,
         dry_run=args.dry_run,
     )
@@ -58,7 +65,11 @@ def main(argv: list[str] | None = None) -> int:
     workflow = TestGenerationWorkflow(
         config=config,
         generator=OpenAICompatibleGenerator(model_override=config.model),
-        runner=MavenRunner(config.project, maven_command=config.maven_command),
+        runner=MavenRunner(
+            config.project,
+            maven_command=config.maven_command,
+            verify_args=config.verify_args,
+        ),
     )
     return workflow.run()
 

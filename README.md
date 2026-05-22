@@ -75,6 +75,7 @@ Useful options:
 --target-class      Optional fully qualified or simple class name for demo control
 --rules-file        Optional file containing project-specific rules
 --maven-command     Maven executable, for example mvn.cmd or C:\path\to\mvn.cmd
+--verify-arg        Extra Maven argument for baseline/final verify, repeat as needed
 --test-suffix      Generated test class suffix, default Test
 --model            Override OPENAI_MODEL
 ```
