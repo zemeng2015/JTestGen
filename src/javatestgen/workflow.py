@@ -6,12 +6,13 @@ from pathlib import Path
 
 from .config import RunConfig
 from .context import build_prompt_context
-from .coverage import ClassCoverage, parse_class_coverages, parse_jacoco_xml, pick_lowest_coverage_class
+from .coverage import ClassCoverage, parse_class_coverages, parse_jacoco_xml
 from .generator import GenerationError, OpenAICompatibleGenerator
 from .java_source import JavaClass, discover_java_classes, find_java_class, find_java_class_by_name
 from .prompting import GENERATION_PROMPT_VERSION, REPAIR_PROMPT_VERSION, build_initial_request, build_repair_request
 from .reporting import RunArtifacts
 from .runner import MavenRunner
+from .targeting import build_target_candidates, pick_target_candidate
 
 
 class TestGenerationWorkflow:
@@ -135,16 +136,10 @@ class TestGenerationWorkflow:
                 raise ValueError(f"--target-class was not found under {self.config.main_source_root}: {self.config.target_class}")
             return java_class, self._find_class_coverage(java_class, coverages)
 
-        remaining = coverages[:]
-        while remaining:
-            coverage = pick_lowest_coverage_class(remaining)
-            if coverage is None:
-                return None
-            java_class = find_java_class(classes, coverage.qualified_name, coverage.source_file)
-            if java_class:
-                return java_class, coverage
-            remaining = [item for item in remaining if item != coverage]
-        return None
+        candidate = pick_target_candidate(build_target_candidates(classes, coverages))
+        if candidate is None:
+            return None
+        return candidate.java_class, candidate.coverage
 
     def _find_class_coverage(
         self,

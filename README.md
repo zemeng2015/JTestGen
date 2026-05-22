@@ -1,8 +1,18 @@
-# Java TestGen Repair
+# JTestGen
 
-`java-testgen` is a local CLI for generating Java unit tests from JaCoCo coverage gaps, running the generated test, and repairing it when Maven reports failures.
+JTestGen is a coverage-guided AI system for generating Java unit tests. It combines JaCoCo coverage analysis, project-context retrieval, LLM-based test generation, Maven execution, repair-loop prompting, and run artifacts into one inspectable workflow.
 
-The first version is intentionally small and inspectable. It targets Maven projects that use JUnit and JaCoCo, and delegates test writing to an OpenAI-compatible chat completion endpoint.
+The project is designed as an AI systems engineering demo: the model is only one component in a larger loop with evaluation, observability, deterministic fixtures, prompt versioning, and real Java repo validation.
+
+## Highlights
+
+- Coverage-guided target selection from JaCoCo XML.
+- Prompt construction from target source, existing sample tests, project rules, and coverage data.
+- Repair loop that feeds Maven failures back into the model.
+- Run artifacts with prompt snapshots, Maven logs, generated revisions, and `report.json`.
+- Prompt versioning for generation and repair prompts.
+- Deterministic eval harness using a file-backed mock generator.
+- Real demo on `FasterXML/jackson-core`: target class coverage improved from `55.56%` to `100.00%`.
 
 ## Quick Start
 
@@ -26,7 +36,7 @@ $env:OPENAI_MODEL="your-model"
 
 1. Runs baseline coverage with `mvn -q verify`.
 2. Parses `target/site/jacoco/jacoco.xml`.
-3. Selects the most uncovered class, prioritizing classes with 0 covered lines.
+3. Selects the most uncovered suitable class, prioritizing classes with 0 covered lines while skipping interfaces, abstract classes, generated sources, inner classes, and other poor targets.
 4. Finds the target source file under `src/main/java`.
 5. Collects existing sample tests from `src/test/java`.
 6. Loads project-specific generation rules from `--rules-file`, `TESTGEN_RULES.md`, `.testgen-rules.md`, or built-in defaults.
