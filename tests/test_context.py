@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from javatestgen.context import find_existing_target_test, find_sample_tests, load_rules
+from javatestgen.context import find_existing_target_test, find_sample_tests, infer_test_package, load_rules
 from javatestgen.java_source import JavaClass
 
 
@@ -84,6 +84,28 @@ class ContextTests(unittest.TestCase):
 
         self.assertIsNotNone(existing)
         self.assertEqual(existing.source, "class ThingGeneratedTest {}")
+
+    def test_infers_test_package_from_nearest_sample(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            test_root = Path(temp_dir) / "src" / "test" / "java"
+            package_dir = test_root / "tools" / "jackson" / "core" / "unittest" / "io"
+            package_dir.mkdir(parents=True)
+            (package_dir / "BufferRecyclerPoolTest.java").write_text(
+                "package tools.jackson.core.unittest.io;\nimport org.junit.jupiter.api.Test; class BufferRecyclerPoolTest { @Test void ok() {} }",
+                encoding="utf-8",
+            )
+            target = JavaClass(
+                source_path=Path("DataOutputAsStream.java"),
+                relative_path=Path("tools/jackson/core/io/DataOutputAsStream.java"),
+                source="",
+                package="tools.jackson.core.io",
+                type_name="DataOutputAsStream",
+            )
+            generated = test_root / "tools" / "jackson" / "core" / "io" / "DataOutputAsStreamGeneratedTest.java"
+
+            test_package = infer_test_package(test_root, target, generated)
+
+        self.assertEqual(test_package, "tools.jackson.core.unittest.io")
 
 
 if __name__ == "__main__":

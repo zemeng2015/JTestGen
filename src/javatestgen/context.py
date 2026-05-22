@@ -27,6 +27,7 @@ class PromptContext:
     rules: str
     sample_tests: list[SampleTest]
     existing_target_test: SampleTest | None = None
+    test_package: str | None = None
 
 
 def build_prompt_context(
@@ -41,6 +42,7 @@ def build_prompt_context(
         rules=load_rules(project, rules_file),
         sample_tests=find_sample_tests(test_root, target, sample_limit, generated_test_path),
         existing_target_test=find_existing_target_test(generated_test_path),
+        test_package=infer_test_package(test_root, target, generated_test_path),
     )
 
 
@@ -104,6 +106,28 @@ def find_existing_target_test(generated_test_path: Path) -> SampleTest | None:
         path=generated_test_path,
         source=generated_test_path.read_text(encoding="utf-8"),
     )
+
+
+def infer_test_package(test_root: Path, target: JavaClass, generated_test_path: Path) -> str:
+    if generated_test_path.exists():
+        package_name = _read_package(generated_test_path)
+        if package_name:
+            return package_name
+
+    samples = find_sample_tests(test_root, target, 1, generated_test_path)
+    if samples:
+        package_name = _read_package(samples[0].path)
+        if package_name:
+            return package_name
+    return target.package
+
+
+def _read_package(path: Path) -> str | None:
+    for line in path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if stripped.startswith("package ") and stripped.endswith(";"):
+            return stripped.removeprefix("package ").removesuffix(";").strip()
+    return None
 
 
 def _package_distance(target_package: str, test_relative_parent: Path) -> int:

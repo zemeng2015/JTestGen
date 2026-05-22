@@ -14,11 +14,11 @@ class PromptingTests(unittest.TestCase):
             test_class_name="ThingGeneratedTest",
             test_path="src/test/java/com/example/ThingGeneratedTest.java",
             coverage=self._coverage(),
-            context=PromptContext(rules="Use JUnit 5.", sample_tests=[]),
+            context=PromptContext(rules="Use JUnit 5.", sample_tests=[], test_package="com.example.tests"),
         )
 
         self.assertIn("Generated test path: src/test/java/com/example/ThingGeneratedTest.java", request.user_prompt)
-        self.assertIn("Use package `com.example`.", request.user_prompt)
+        self.assertIn("Use package `com.example.tests`.", request.user_prompt)
         self.assertIn("Return exactly one complete Java source file.", request.user_prompt)
         self.assertIn("Do not include Markdown fences", request.user_prompt)
 
@@ -31,12 +31,13 @@ class PromptingTests(unittest.TestCase):
             test_path="src/test/java/com/example/ThingGeneratedTest.java",
             test_command="mvn -q -DskipITs -Dtest=ThingGeneratedTest test",
             coverage=self._coverage(),
-            context=PromptContext(rules="Use JUnit 5.", sample_tests=[]),
+            context=PromptContext(rules="Use JUnit 5.", sample_tests=[], test_package="com.example.tests"),
         )
 
         self.assertIn("mvn -q -DskipITs -Dtest=ThingGeneratedTest test", request.user_prompt)
         self.assertIn("First infer the failure category", request.user_prompt)
         self.assertIn("Java compilation error", request.user_prompt)
+        self.assertIn("package exists in another module", request.user_prompt)
         self.assertIn("Return exactly one complete corrected Java source file.", request.user_prompt)
 
     def _java_class(self) -> JavaClass:

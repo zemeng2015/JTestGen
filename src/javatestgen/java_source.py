@@ -22,6 +22,11 @@ class JavaClass:
         package_path = Path(*self.package.split(".")) if self.package else Path()
         return package_path / f"{self.type_name}{suffix}.java"
 
+    def test_relative_path_for_package(self, suffix: str, test_package: str | None = None) -> Path:
+        package = self.package if test_package is None else test_package
+        package_path = Path(*package.split(".")) if package else Path()
+        return package_path / f"{self.type_name}{suffix}.java"
+
     @property
     def qualified_name(self) -> str:
         return f"{self.package}.{self.type_name}" if self.package else self.type_name

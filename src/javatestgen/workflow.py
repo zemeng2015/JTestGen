@@ -118,13 +118,17 @@ class TestGenerationWorkflow:
 
     def _process_class(self, java_class: JavaClass, coverage: ClassCoverage) -> bool:
         test_class_name = f"{java_class.type_name}{self.config.test_suffix}"
-        test_path = self.config.test_source_root / java_class.test_relative_path(self.config.test_suffix)
+        provisional_test_path = self.config.test_source_root / java_class.test_relative_path(self.config.test_suffix)
         context = build_prompt_context(
             project=self.config.project,
             target=java_class,
-            generated_test_path=test_path,
+            generated_test_path=provisional_test_path,
             rules_file=self.config.rules_file,
             sample_limit=self.config.sample_tests,
+        )
+        test_path = self.config.test_source_root / java_class.test_relative_path_for_package(
+            self.config.test_suffix,
+            context.test_package,
         )
         relative_test_path = str(test_path.relative_to(self.config.project))
         request = build_initial_request(

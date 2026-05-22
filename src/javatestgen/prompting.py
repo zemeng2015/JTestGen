@@ -22,6 +22,7 @@ def build_initial_request(
     coverage: ClassCoverage,
     context: PromptContext,
 ) -> GenerationRequest:
+    test_package = context.test_package or java_class.package
     user_prompt = f"""Task: create one Java unit test file for a production class selected from a JaCoCo coverage report.
 
 Target:
@@ -32,7 +33,7 @@ Target:
 
 Output contract:
 - Return exactly one complete Java source file.
-- Use package `{java_class.package}`.
+- Use package `{test_package}`.
 - The public/top-level test class must be named `{test_class_name}`.
 - Do not include Markdown fences, explanations, diffs, or multiple alternatives.
 - Do not modify or duplicate existing tests. Add focused tests that complement them.
@@ -77,6 +78,7 @@ def build_repair_request(
     coverage: ClassCoverage,
     context: PromptContext,
 ) -> GenerationRequest:
+    test_package = context.test_package or java_class.package
     user_prompt = f"""Task: repair one generated Java unit test file so this exact Maven command passes:
 {test_command}
 
@@ -92,7 +94,8 @@ Repair strategy:
 - If an assertion is brittle or behavior is uncertain, replace it with a stable public-contract assertion.
 - Do not add sleeps, network calls, dependency changes, build changes, or production-code changes.
 - Do not invent dependencies. Use only APIs and libraries already implied by the source or sample tests.
-- Keep package `{java_class.package}` and class name `{test_class_name}` unless the Maven output proves they are wrong.
+- Keep package `{test_package}` and class name `{test_class_name}` unless the Maven output proves they are wrong.
+- If Maven says the package exists in another module, move the test to the sample-test package `{test_package}` and import the production class.
 - Follow the project rules and sample test style.
 
 Output contract:
