@@ -31,6 +31,9 @@ class MavenRunner:
     def verify(self) -> CommandResult:
         return self._run([self.maven_command, "-q", *self.verify_args, "verify"])
 
+    def verify_command(self) -> str:
+        return " ".join([self.maven_command, "-q", *self.verify_args, "verify"])
+
     def test_generated_class(self, test_class_name: str) -> CommandResult:
         return self._run([self.maven_command, "-q", *self.verify_args, f"-Dtest={test_class_name}", "test"])
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import time
 from pathlib import Path
 
 from .config import RunConfig
@@ -31,10 +32,15 @@ class TestGenerationWorkflow:
         self.artifacts.flush()
 
     def run(self) -> int:
+        started = time.monotonic()
+        self.artifacts.update(
+            verify_command=self.runner.verify_command(),
+        )
         _validate_project(self.config.project)
         classes = discover_java_classes(self.config.main_source_root, self.config.class_glob)
         if not classes:
             print(f"No Java classes found under {self.config.main_source_root}")
+            self._finish(status="no_java_classes", started=started)
             return 1
 
         print("Running baseline coverage: mvn -q verify")
@@ -45,6 +51,7 @@ class TestGenerationWorkflow:
             print(baseline_result.output[-4000:])
             self.artifacts.update(status="baseline_failed")
             self.artifacts.add_error("Baseline mvn verify failed.")
+            self._finish(status="baseline_failed", started=started)
             return 1
 
         baseline_summary = parse_jacoco_xml(self.config.jacoco_xml)
@@ -52,6 +59,7 @@ class TestGenerationWorkflow:
         selected = self._select_target_class(classes, baseline_coverages)
         if selected is None:
             print(f"No coverable class found in {self.config.jacoco_xml}")
+            self._finish(status="no_coverable_class", started=started)
             return 1
 
         java_class, class_coverage = selected
@@ -67,6 +75,9 @@ class TestGenerationWorkflow:
         )
 
         ok = self._process_class(java_class, class_coverage)
+        if not ok:
+            self._finish(status=self.artifacts.report.status, started=started)
+            return 1
 
         print("Running final coverage: mvn -q verify")
         final_result = self.runner.verify()
@@ -76,6 +87,7 @@ class TestGenerationWorkflow:
             print(final_result.output[-4000:])
             self.artifacts.update(status="final_verify_failed")
             self.artifacts.add_error("Final mvn verify failed after generation.")
+            self._finish(status="final_verify_failed", started=started)
             return 1
 
         final_summary = parse_jacoco_xml(self.config.jacoco_xml)
@@ -88,9 +100,11 @@ class TestGenerationWorkflow:
             final_total=final_summary.line_ratio,
         )
         self.artifacts.update(
-            status="success" if ok else "generated_test_failed",
+            status="success",
             final_project_line_coverage=final_summary.line_ratio,
             final_class_line_coverage=final_class_coverage.line_ratio,
+            project_line_coverage_delta=final_summary.line_ratio - baseline_summary.line_ratio,
+            class_line_coverage_delta=final_class_coverage.line_ratio - class_coverage.line_ratio,
         )
 
         if final_summary.line_ratio < self.config.target_coverage:
@@ -99,8 +113,16 @@ class TestGenerationWorkflow:
                 f"{self.config.target_coverage:.2%}"
             )
             self.artifacts.update(status="coverage_below_target")
+            self._finish(status="coverage_below_target", started=started)
             return 1
+        self._finish(status="success", started=started)
         return 0 if ok else 1
+
+    def _finish(self, status: str, started: float) -> None:
+        self.artifacts.update(
+            status=status,
+            duration_seconds=round(time.monotonic() - started, 3),
+        )
 
     def _select_target_class(
         self,
@@ -163,6 +185,7 @@ class TestGenerationWorkflow:
             context=context,
         )
         self.artifacts.update(generated_test_path=relative_test_path)
+        self.artifacts.update(test_command=self.runner.test_generated_class_command(test_class_name))
         self.artifacts.write_text("prompt.initial.system.txt", request.system_prompt)
         self.artifacts.write_text("prompt.initial.user.txt", request.user_prompt)
 
