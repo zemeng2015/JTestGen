@@ -6,6 +6,10 @@ from .generator import GenerationRequest
 from .java_source import JavaClass
 
 
+GENERATION_PROMPT_VERSION = "generation-v3"
+REPAIR_PROMPT_VERSION = "repair-v3"
+
+
 SYSTEM_PROMPT = """You generate production-quality Java unit tests.
 Return only a complete Java source file, with no Markdown fences.
 Prefer JUnit 5 and Mockito only when mocking is necessary.

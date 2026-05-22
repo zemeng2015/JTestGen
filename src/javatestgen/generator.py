@@ -5,6 +5,7 @@ import os
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
+from pathlib import Path
 
 
 class GenerationError(RuntimeError):
@@ -59,3 +60,23 @@ class OpenAICompatibleGenerator:
         except (KeyError, IndexError, TypeError) as exc:
             raise GenerationError(f"Unexpected generation response: {body}") from exc
 
+
+class FileGenerator:
+    """Deterministic generator for evals and local smoke tests."""
+
+    def __init__(self, responses: list[str]) -> None:
+        self.responses = responses
+        self.index = 0
+
+    @classmethod
+    def from_file(cls, path: Path) -> "FileGenerator":
+        body = json.loads(path.read_text(encoding="utf-8"))
+        responses = body["responses"] if isinstance(body, dict) else body
+        return cls([str(response) for response in responses])
+
+    def generate(self, request: GenerationRequest) -> str:
+        if self.index >= len(self.responses):
+            raise GenerationError("FileGenerator has no response left.")
+        response = self.responses[self.index]
+        self.index += 1
+        return response

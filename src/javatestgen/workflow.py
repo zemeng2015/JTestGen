@@ -8,7 +8,8 @@ from .context import build_prompt_context
 from .coverage import ClassCoverage, parse_class_coverages, parse_jacoco_xml, pick_lowest_coverage_class
 from .generator import GenerationError, OpenAICompatibleGenerator
 from .java_source import JavaClass, discover_java_classes, find_java_class, find_java_class_by_name
-from .prompting import build_initial_request, build_repair_request
+from .prompting import GENERATION_PROMPT_VERSION, REPAIR_PROMPT_VERSION, build_initial_request, build_repair_request
+from .reporting import RunArtifacts
 from .runner import MavenRunner
 
 
@@ -22,6 +23,12 @@ class TestGenerationWorkflow:
         self.config = config
         self.generator = generator
         self.runner = runner
+        self.artifacts = RunArtifacts(config.project, enabled=config.save_artifacts)
+        self.artifacts.report.prompt_versions = {
+            "generation": GENERATION_PROMPT_VERSION,
+            "repair": REPAIR_PROMPT_VERSION,
+        }
+        self.artifacts.flush()
 
     def run(self) -> int:
         _validate_project(self.config.project)
@@ -32,9 +39,12 @@ class TestGenerationWorkflow:
 
         print("Running baseline coverage: mvn -q verify")
         baseline_result = self.runner.verify()
+        self.artifacts.write_text("maven.baseline.log", baseline_result.output)
         if not baseline_result.ok:
             print("Baseline mvn verify failed. Fix the target project before generating new tests.")
             print(baseline_result.output[-4000:])
+            self.artifacts.update(status="baseline_failed")
+            self.artifacts.add_error("Baseline mvn verify failed.")
             return 1
 
         baseline_summary = parse_jacoco_xml(self.config.jacoco_xml)
@@ -50,14 +60,22 @@ class TestGenerationWorkflow:
             f"{java_class.qualified_name} with {class_coverage.line_ratio:.2%} line coverage "
             f"({class_coverage.line_covered} covered, {class_coverage.line_missed} missed)"
         )
+        self.artifacts.update(
+            target_class=java_class.qualified_name,
+            baseline_project_line_coverage=baseline_summary.line_ratio,
+            baseline_class_line_coverage=class_coverage.line_ratio,
+        )
 
         ok = self._process_class(java_class, class_coverage)
 
         print("Running final coverage: mvn -q verify")
         final_result = self.runner.verify()
+        self.artifacts.write_text("maven.final.log", final_result.output)
         if not final_result.ok:
             print("Final mvn verify failed after generation.")
             print(final_result.output[-4000:])
+            self.artifacts.update(status="final_verify_failed")
+            self.artifacts.add_error("Final mvn verify failed after generation.")
             return 1
 
         final_summary = parse_jacoco_xml(self.config.jacoco_xml)
@@ -69,12 +87,18 @@ class TestGenerationWorkflow:
             baseline_total=baseline_summary.line_ratio,
             final_total=final_summary.line_ratio,
         )
+        self.artifacts.update(
+            status="success" if ok else "generated_test_failed",
+            final_project_line_coverage=final_summary.line_ratio,
+            final_class_line_coverage=final_class_coverage.line_ratio,
+        )
 
         if final_summary.line_ratio < self.config.target_coverage:
             print(
                 f"Coverage below target: {final_summary.line_ratio:.2%} < "
                 f"{self.config.target_coverage:.2%}"
             )
+            self.artifacts.update(status="coverage_below_target")
             return 1
         return 0 if ok else 1
 
@@ -138,6 +162,9 @@ class TestGenerationWorkflow:
             coverage=coverage,
             context=context,
         )
+        self.artifacts.update(generated_test_path=relative_test_path)
+        self.artifacts.write_text("prompt.initial.system.txt", request.system_prompt)
+        self.artifacts.write_text("prompt.initial.user.txt", request.user_prompt)
 
         print(f"Generating {test_path.relative_to(self.config.project)} for {java_class.qualified_name}")
         if self.config.dry_run:
@@ -151,19 +178,25 @@ class TestGenerationWorkflow:
             return False
 
         write_test(test_path, generated)
+        self.artifacts.write_text("generated.initial.java", generated)
 
         for attempt in range(self.config.max_repairs + 1):
             result = self.runner.test_generated_class(test_class_name)
+            self.artifacts.write_text(f"maven.test.{attempt}.log", result.output)
             if result.ok:
                 print(f"Generated test passed: mvn -q -Dtest={test_class_name} test")
+                self.artifacts.write_text("generated.final.java", test_path.read_text(encoding="utf-8"))
                 return True
 
             if attempt >= self.config.max_repairs:
                 print(f"Repair limit reached for {test_class_name}")
                 print(result.output[-4000:])
+                self.artifacts.update(status="repair_limit_reached", repair_attempts=attempt)
+                self.artifacts.add_error(f"Repair limit reached for {test_class_name}.")
                 return False
 
             print(f"Repairing {test_class_name}, attempt {attempt + 1}/{self.config.max_repairs}")
+            self.artifacts.update(repair_attempts=attempt + 1)
             current_test = test_path.read_text(encoding="utf-8")
             repair_request = build_repair_request(
                 java_class=java_class,
@@ -175,12 +208,16 @@ class TestGenerationWorkflow:
                 coverage=coverage,
                 context=context,
             )
+            self.artifacts.write_text(f"prompt.repair.{attempt + 1}.system.txt", repair_request.system_prompt)
+            self.artifacts.write_text(f"prompt.repair.{attempt + 1}.user.txt", repair_request.user_prompt)
             try:
                 repaired = clean_java_source(self.generator.generate(repair_request))
             except GenerationError as exc:
                 print(exc)
+                self.artifacts.add_error(str(exc))
                 return False
             write_test(test_path, repaired)
+            self.artifacts.write_text(f"generated.repair.{attempt + 1}.java", repaired)
         return False
 
 

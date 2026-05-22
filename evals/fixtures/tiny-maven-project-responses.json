@@ -1,0 +1,5 @@
+{
+  "responses": [
+    "package com.example;\n\nimport org.junit.jupiter.api.Test;\n\nimport static org.junit.jupiter.api.Assertions.assertEquals;\nimport static org.junit.jupiter.api.Assertions.assertThrows;\n\nclass CalculatorGeneratedTest {\n    @Test\n    void divideReturnsQuotient() {\n        assertEquals(3, new Calculator().divide(9, 3));\n    }\n\n    @Test\n    void divideRejectsZeroDivisor() {\n        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,\n                () -> new Calculator().divide(9, 0));\n        assertEquals(\"right must not be zero\", e.getMessage());\n    }\n}\n"
+  ]
+}

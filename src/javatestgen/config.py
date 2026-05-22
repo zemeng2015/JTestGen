@@ -16,6 +16,7 @@ class RunConfig:
     rules_file: Path | None = None
     maven_command: str | None = None
     verify_args: tuple[str, ...] = ()
+    save_artifacts: bool = True
     model: str | None = None
     dry_run: bool = False
 

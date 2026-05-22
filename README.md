@@ -80,6 +80,26 @@ Useful options:
 --model            Override OPENAI_MODEL
 ```
 
+## Run Artifacts
+
+By default, every run writes an inspectable artifact bundle into the target Java project:
+
+```text
+.jtestgen/runs/<run-id>/
+```
+
+The bundle includes `report.json`, prompt snapshots, Maven logs, and generated test revisions. Use `--no-artifacts` to disable this.
+
+## Deterministic Eval
+
+Run the local fixture eval without calling an LLM:
+
+```powershell
+python evals/run_eval.py --maven-command C:\tmp\apache-maven-3.9.11\bin\mvn.cmd
+```
+
+The eval uses a mock file-backed generator and reports compile success, repair attempts, target class, and coverage before/after.
+
 ## Project Rules
 
 You can add a rules file to the target Java repo:

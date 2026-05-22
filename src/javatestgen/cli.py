@@ -38,6 +38,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Extra Maven argument for baseline/final verify. Repeat as needed, for example --verify-arg=-DskipITs.",
     )
     run.add_argument("--model", default=None, help="Override OPENAI_MODEL.")
+    run.add_argument("--no-artifacts", action="store_true", help="Do not write .jtestgen run artifacts.")
     run.add_argument("--dry-run", action="store_true", help="Print prompts without writing or running tests.")
     return parser
 
@@ -58,6 +59,7 @@ def main(argv: list[str] | None = None) -> int:
         rules_file=args.rules_file.resolve() if args.rules_file else None,
         maven_command=args.maven_command,
         verify_args=tuple(args.verify_arg),
+        save_artifacts=not args.no_artifacts,
         model=args.model,
         dry_run=args.dry_run,
     )
