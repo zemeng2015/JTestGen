@@ -14,6 +14,12 @@ The project is designed as an AI systems engineering demo: the model is only one
 - Deterministic eval harness using a file-backed mock generator.
 - Real demo on `FasterXML/jackson-core`: target class coverage improved from `55.56%` to `100.00%`.
 
+## Project Guide
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Jackson-core demo](DEMO.md)
+- [Example run report](docs/examples/jackson-core-report.json)
+
 ## Quick Start
 
 ```powershell
@@ -99,6 +105,8 @@ By default, every run writes an inspectable artifact bundle into the target Java
 ```
 
 The bundle includes `report.json`, prompt snapshots, Maven logs, and generated test revisions. Use `--no-artifacts` to disable this.
+
+See [docs/examples/jackson-core-report.json](docs/examples/jackson-core-report.json) for a real demo-shaped report.
 
 ## Deterministic Eval
 

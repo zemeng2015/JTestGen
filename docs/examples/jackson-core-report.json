@@ -1,0 +1,21 @@
+{
+  "baseline_class_line_coverage": 0.5556,
+  "baseline_project_line_coverage": 0.8172,
+  "class_line_coverage_delta": 0.4444,
+  "duration_seconds": 204.1,
+  "errors": [],
+  "final_class_line_coverage": 1.0,
+  "final_project_line_coverage": 0.8175,
+  "generated_test_path": "src/test/java/tools/jackson/core/unittest/io/DataOutputAsStreamGeneratedTest.java",
+  "project": "C:\\tmp\\jackson-core",
+  "project_line_coverage_delta": 0.0003,
+  "prompt_versions": {
+    "generation": "generation-v3",
+    "repair": "repair-v3"
+  },
+  "repair_attempts": 1,
+  "status": "success",
+  "target_class": "tools.jackson.core.io.DataOutputAsStream",
+  "test_command": "C:\\tmp\\apache-maven-3.9.11\\bin\\mvn.cmd -q -DskipITs -Dtest=DataOutputAsStreamGeneratedTest test",
+  "verify_command": "C:\\tmp\\apache-maven-3.9.11\\bin\\mvn.cmd -q -DskipITs verify"
+}

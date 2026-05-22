@@ -62,3 +62,7 @@ Each run writes observability artifacts under the target project:
 
 These files make the LLM workflow inspectable and reproducible.
 
+See also:
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Example report](docs/examples/jackson-core-report.json)
