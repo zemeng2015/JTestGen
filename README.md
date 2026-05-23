@@ -1,5 +1,7 @@
 # JTestGen
 
+[![CI](https://github.com/zemeng2015/JTestGen/actions/workflows/ci.yml/badge.svg)](https://github.com/zemeng2015/JTestGen/actions/workflows/ci.yml)
+
 JTestGen is a coverage-guided AI system for generating Java unit tests. It combines JaCoCo coverage analysis, project-context retrieval, LLM-based test generation, Maven execution, repair-loop prompting, and run artifacts into one inspectable workflow.
 
 The project is designed as an AI systems engineering demo: the model is only one component in a larger loop with evaluation, observability, deterministic fixtures, prompt versioning, and real Java repo validation.
