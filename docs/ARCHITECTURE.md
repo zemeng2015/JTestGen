@@ -93,7 +93,12 @@ The deterministic eval harness uses a tiny Maven fixture and a file-backed mock 
 python evals/run_eval.py --maven-command C:\tmp\apache-maven-3.9.11\bin\mvn.cmd
 ```
 
-It checks that the orchestration loop can:
+It includes two deterministic scenarios:
+
+- `tiny-success`: the first generated test compiles and improves coverage.
+- `tiny-repair-needed`: the first generated test fails compilation, then the repair response fixes it.
+
+The eval checks that the orchestration loop can:
 
 - run baseline JaCoCo coverage
 - select a target class
@@ -119,4 +124,3 @@ Not yet supported:
 - automatic build-file dependency edits
 - patch-only mode
 - semantic coverage attribution beyond JaCoCo line counters
-

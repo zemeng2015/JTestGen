@@ -116,7 +116,7 @@ Run the local fixture eval without calling an LLM:
 python evals/run_eval.py --maven-command C:\tmp\apache-maven-3.9.11\bin\mvn.cmd
 ```
 
-The eval uses a mock file-backed generator and reports compile success, repair attempts, target class, and coverage before/after.
+The eval uses a mock file-backed generator and reports compile success, repair attempts, target class, and coverage before/after. It includes a direct-success case and a repair-needed case where the first generated test fails compilation and the repair response fixes it.
 
 ## Project Rules
 
