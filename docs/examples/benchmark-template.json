@@ -1,0 +1,15 @@
+{
+  "repo": "",
+  "commit_sha": "",
+  "maven_command": "",
+  "target_class": "",
+  "baseline_class_line_coverage": null,
+  "final_class_line_coverage": null,
+  "baseline_project_line_coverage": null,
+  "final_project_line_coverage": null,
+  "repair_attempts": null,
+  "generated_test_path": "",
+  "artifact_path": "",
+  "result": "",
+  "notes": ""
+}

@@ -2,25 +2,53 @@
 
 [![CI](https://github.com/zemeng2015/JTestGen/actions/workflows/ci.yml/badge.svg)](https://github.com/zemeng2015/JTestGen/actions/workflows/ci.yml)
 
-JTestGen is a coverage-guided AI system for generating Java unit tests. It combines JaCoCo coverage analysis, project-context retrieval, LLM-based test generation, Maven execution, repair-loop prompting, and run artifacts into one inspectable workflow.
+AI Coverage Remediation Agent for Enterprise Java Teams
 
-The project is designed as an AI systems engineering demo: the model is only one component in a larger loop with evaluation, observability, deterministic fixtures, prompt versioning, and real Java repo validation.
+JTestGen helps Java teams systematically improve unit test coverage by combining JaCoCo-guided target selection, project-aware prompt construction, Maven-validated test generation, repair-loop prompting, and auditable run artifacts.
 
-## Highlights
+JTestGen is not a generic code completion tool. It is a workflow for turning Java coverage gaps into passing JUnit tests with measurable before/after coverage reports.
 
-- Coverage-guided target selection from JaCoCo XML.
-- Prompt construction from target source, existing sample tests, project rules, and coverage data.
-- Repair loop that feeds Maven failures back into the model.
-- Run artifacts with prompt snapshots, Maven logs, generated revisions, and `report.json`.
-- Prompt versioning for generation and repair prompts.
-- Deterministic eval harness using a file-backed mock generator.
-- Real demo on `FasterXML/jackson-core`: target class coverage improved from `55.56%` to `100.00%`.
+Copilot helps developers write tests faster.  
+JTestGen helps teams remediate coverage gaps systematically.
+
+## Why JTestGen?
+
+- Coverage-guided: starts from JaCoCo coverage data, not random classes
+- Maven-validated: generated tests must compile and pass
+- Repair-loop enabled: failed tests are repaired using Maven output
+- Auditable: stores prompts, Maven logs, generated revisions, and `report.json`
+- Team-oriented: designed for repeatable coverage remediation workflows
+- Local/BYOK friendly: supports OpenAI-compatible endpoints and can be adapted for private model endpoints
+
+## Demo Result
+
+| Repo | Target Class | Before | After | Maven Result |
+| --- | --- | ---: | ---: | --- |
+| FasterXML/jackson-core | `tools.jackson.core.io.DataOutputAsStream` | 55.56% | 100.00% | Passed |
+
+See [DEMO.md](DEMO.md) for the full run details and artifacts.
 
 ## Project Guide
 
 - [Architecture](docs/ARCHITECTURE.md)
-- [Jackson-core demo](DEMO.md)
+- [Positioning](docs/POSITIONING.md)
+- [Benchmarks](docs/BENCHMARKS.md)
+- [Safety and limits](docs/SAFETY_AND_LIMITS.md)
+- [Coverage audit offer](docs/COVERAGE_AUDIT_OFFER.md)
+- [Enterprise roadmap](docs/ENTERPRISE_ROADMAP.md)
 - [Example run report](docs/examples/jackson-core-report.json)
+
+## What JTestGen Does
+
+1. Runs baseline `mvn verify`
+2. Parses JaCoCo XML
+3. Selects low-coverage target class
+4. Builds project-aware prompt with source, sample tests, coverage data, and rules
+5. Generates a JUnit test
+6. Runs Maven test for the generated test
+7. Repairs failures using Maven output
+8. Runs final coverage
+9. Writes `report.json` and run artifacts
 
 ## Quick Start
 
@@ -40,29 +68,6 @@ $env:OPENAI_BASE_URL="https://your-compatible-endpoint/v1"
 $env:OPENAI_MODEL="your-model"
 ```
 
-## What It Does
-
-1. Runs baseline coverage with `mvn -q verify`.
-2. Parses `target/site/jacoco/jacoco.xml`.
-3. Selects the most uncovered suitable class, prioritizing classes with 0 covered lines while skipping interfaces, abstract classes, generated sources, inner classes, and other poor targets.
-4. Finds the target source file under `src/main/java`.
-5. Collects existing sample tests from `src/test/java`.
-6. Loads project-specific generation rules from `--rules-file`, `TESTGEN_RULES.md`, `.testgen-rules.md`, or built-in defaults.
-7. Builds a prompt with coverage data, source code, sample tests, and rules.
-8. Writes one generated JUnit test under `src/test/java`.
-9. Runs only the generated test with `mvn -q -Dtest=<GeneratedTestClass> test`.
-10. If it fails, sends the generated test, source code, sample tests, rules, and Maven output back to the model for repair.
-11. Repeats until the generated test passes or the repair limit is reached.
-12. Runs final coverage with `mvn -q verify` and reports project and target-class coverage before/after.
-
-## Assumptions
-
-- The target project uses Maven.
-- Maven is available on `PATH`.
-- The target project has or can resolve test dependencies.
-- Generated tests are JUnit 5 by default.
-- JaCoCo report generation is available through the Maven JaCoCo plugin.
-
 ## Commands
 
 Generate one coverage-guided test and run the repair loop:
@@ -71,7 +76,7 @@ Generate one coverage-guided test and run the repair loop:
 java-testgen run C:\path\to\java-project
 ```
 
-For a demo, you can force a known class instead of using automatic lowest-coverage selection:
+Force a known class instead of using automatic lowest-coverage selection:
 
 ```powershell
 java-testgen run C:\path\to\java-project --target-class com.example.OrderService
@@ -110,6 +115,56 @@ The bundle includes `report.json`, prompt snapshots, Maven logs, and generated t
 
 See [docs/examples/jackson-core-report.json](docs/examples/jackson-core-report.json) for a real demo-shaped report.
 
+## Safety Model
+
+- Does not modify production source code
+- Writes generated tests under `src/test/java`
+- Stores all generated revisions
+- Stores Maven logs and prompts for review
+- Designed for human review before merge
+- Does not claim semantic correctness beyond generated tests passing and coverage improvement
+
+## Technical Assumptions
+
+- The target project uses Maven.
+- Maven is available on `PATH`, or provided with `--maven-command`.
+- The target project has or can resolve test dependencies.
+- Generated tests are JUnit 5 by default unless project rules or sample tests indicate otherwise.
+- JaCoCo report generation is available through the Maven JaCoCo plugin.
+- Project-specific generation rules can be loaded from `--rules-file`, `TESTGEN_RULES.md`, `.testgen-rules.md`, or built-in defaults.
+
+## Supported Today
+
+| Area | Status |
+| --- | --- |
+| Maven single-module projects | Supported |
+| JaCoCo XML reports | Supported |
+| JUnit-style test generation | Supported |
+| OpenAI-compatible APIs | Supported |
+| Maven repair loop | Supported |
+| Run artifacts | Supported |
+| Gradle projects | Not yet |
+| Maven multi-module mapping | Not yet |
+| Automatic build-file edits | Not yet |
+| Patch-only PR mode | Planned |
+| CI/GitHub Actions integration | Planned |
+
+## Who This Is For
+
+- Java teams with legacy Maven projects
+- teams with JaCoCo coverage gates
+- teams that need measurable coverage improvement
+- consulting teams that need to deliver coverage improvements
+- teams that want local/private endpoint AI workflows
+
+## Not For
+
+- replacing human review
+- proving business correctness automatically
+- generating arbitrary production code
+- replacing full QA strategy
+- projects without reproducible Maven test setup
+
 ## Deterministic Eval
 
 Run the local fixture eval without calling an LLM:
@@ -136,6 +191,39 @@ Example:
 - Prefer @ExtendWith(MockitoExtension.class) for mocks.
 - Keep tests package-private.
 ```
+
+See [TESTGEN_RULES.example.md](TESTGEN_RULES.example.md) for a fuller example.
+
+## Roadmap
+
+Short-term:
+
+- benchmark suite across 5+ Java projects
+- batch mode for multiple target classes
+- improved report summary
+- GitHub Actions example workflow
+- PR generation mode
+
+Mid-term:
+
+- Maven multi-module support
+- Gradle support
+- HTML dashboard
+- team rules/profile support
+- private endpoint deployment guide
+
+Enterprise-oriented:
+
+- Jenkins integration
+- GitHub App / GitLab integration
+- policy-based target selection
+- coverage quality gates
+- team audit logs
+- private deployment package
+
+## Call for Early Users
+
+Looking for Java teams with low-coverage Maven projects. If you have a repo with JaCoCo coverage gaps, try JTestGen locally or open an issue for a free coverage audit.
 
 ## Notes
 
