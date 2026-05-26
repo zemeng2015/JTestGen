@@ -28,6 +28,13 @@ JTestGen helps teams remediate coverage gaps systematically.
 
 See [DEMO.md](DEMO.md) for the full run details and artifacts.
 
+## Try It / Request a Coverage Audit
+
+Have a Java/Maven project with JaCoCo coverage gaps?
+
+- Run JTestGen locally and review `.jtestgen/runs/<run-id>/report.json`
+- Or open a [Coverage Audit Request issue](.github/ISSUE_TEMPLATE/coverage_audit_request.md)
+
 ## Project Guide
 
 - [Architecture](docs/ARCHITECTURE.md)
@@ -37,6 +44,10 @@ See [DEMO.md](DEMO.md) for the full run details and artifacts.
 - [Coverage audit offer](docs/COVERAGE_AUDIT_OFFER.md)
 - [Enterprise roadmap](docs/ENTERPRISE_ROADMAP.md)
 - [Example run report](docs/examples/jackson-core-report.json)
+
+## 60-second mental model
+
+JTestGen = JaCoCo target selection + project-aware prompt + Maven validation + repair loop + auditable artifacts.
 
 ## What JTestGen Does
 
@@ -66,6 +77,16 @@ By default, the CLI calls `https://api.openai.com/v1/chat/completions` with `gpt
 ```powershell
 $env:OPENAI_BASE_URL="https://your-compatible-endpoint/v1"
 $env:OPENAI_MODEL="your-model"
+```
+
+## Sample Output
+
+```text
+Selected target: tools.jackson.core.io.DataOutputAsStream
+Generated test passed
+Class line coverage: 55.56% -> 100.00%
+Project line coverage: 81.72% -> 81.75%
+Artifacts written to: .jtestgen/runs/<run-id>/
 ```
 
 ## Commands

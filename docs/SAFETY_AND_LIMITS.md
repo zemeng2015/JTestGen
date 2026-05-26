@@ -2,6 +2,8 @@
 
 ## Safety principles
 
+JTestGen is designed to produce reviewable test candidates, not auto-merged production changes.
+
 - Generated tests require human review
 - Production source code is not modified
 - Generated revisions are preserved
