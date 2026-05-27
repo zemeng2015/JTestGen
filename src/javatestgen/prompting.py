@@ -6,8 +6,8 @@ from .generator import GenerationRequest
 from .java_source import JavaClass
 
 
-GENERATION_PROMPT_VERSION = "generation-v3"
-REPAIR_PROMPT_VERSION = "repair-v3"
+GENERATION_PROMPT_VERSION = "generation-v4"
+REPAIR_PROMPT_VERSION = "repair-v4"
 
 
 SYSTEM_PROMPT = """You generate production-quality Java unit tests.
@@ -15,7 +15,7 @@ Return only a complete Java source file, with no Markdown fences.
 Prefer JUnit 5 and Mockito only when mocking is necessary.
 Keep tests deterministic, readable, and focused on public behavior.
 Do not change production code.
-Do not invent project dependencies, build plugins, source files, or helper APIs.
+Do not invent project dependencies, build plugins, source files, resources, or helper APIs.
 """
 
 
@@ -45,6 +45,8 @@ Output contract:
 Coverage strategy:
 - Prefer tests that execute currently uncovered public behavior of `{java_class.type_name}`.
 - Exercise edge cases and exception paths only when they are stable and visible from the source.
+- Do not invent classpath resources, files, environment variables, network services, or test fixtures that are not present in the project.
+- For algorithmic code, avoid guessed magic constants. Derive expected values from the source, existing sample tests, or stable JDK/reference APIs when available.
 - Avoid brittle assertions on logging text, timing, object identity, private implementation details, or platform-specific paths unless the existing tests already do this.
 - If the class is a tiny adapter/wrapper, verify delegation with a minimal fake/stub instead of adding broad integration tests.
 
@@ -62,6 +64,9 @@ Production source:
 ```java
 {java_class.source}
 ```
+
+Related production sources:
+{format_related_sources(context)}
 
 Existing sample tests:
 {format_sample_tests(context)}
@@ -95,9 +100,12 @@ Target:
 Repair strategy:
 - First infer the failure category from Maven output: Java compilation error, missing import/dependency, test discovery/class-name issue, checked exception, assertion failure, Mockito/mocking issue, or runtime exception.
 - Make the smallest source change that addresses the failure while preserving coverage intent.
-- If an assertion is brittle or behavior is uncertain, replace it with a stable public-contract assertion.
+- If an assertion failure shows expected/actual values, do not repeat the same wrong expected value. Re-derive the expected value from production source, existing sample tests, or the actual deterministic Maven output when it matches the public behavior.
+- If the generated test expected an exception but Maven says nothing was thrown, remove that exception assertion and assert the actual public result or state instead.
+- If Maven output shows a missing file, missing classpath resource, or unresolved path, do not create new resources or files. Rewrite the test to use existing project resources, in-memory data, or a stable negative-path assertion.
+- If an assertion is brittle or behavior is uncertain, replace it with a stable public-contract assertion that still executes the target behavior.
 - Do not add sleeps, network calls, dependency changes, build changes, or production-code changes.
-- Do not invent dependencies. Use only APIs and libraries already implied by the source or sample tests.
+- Do not invent dependencies, resources, helper files, or test fixtures. Use only APIs, libraries, and resources already implied by the source or sample tests.
 - Keep package `{test_package}` and class name `{test_class_name}` unless the Maven output proves they are wrong.
 - If Maven says the package exists in another module, move the test to the sample-test package `{test_package}` and import the production class.
 - Follow the project rules and sample test style.
@@ -115,6 +123,9 @@ Production source:
 ```java
 {java_class.source}
 ```
+
+Related production sources:
+{format_related_sources(context)}
 
 Current generated test:
 ```java
@@ -142,6 +153,21 @@ def format_sample_tests(context: PromptContext) -> str:
             f"Path: {sample.path}\n"
             "```java\n"
             f"{sample.source[-8000:]}\n"
+            "```"
+        )
+    return "\n\n".join(blocks)
+
+
+def format_related_sources(context: PromptContext) -> str:
+    if not context.related_sources:
+        return "No directly referenced project source files were found."
+
+    blocks = []
+    for source in context.related_sources:
+        blocks.append(
+            f"Path: {source.path}\n"
+            "```java\n"
+            f"{source.source[-6000:]}\n"
             "```"
         )
     return "\n\n".join(blocks)

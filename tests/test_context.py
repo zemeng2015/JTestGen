@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from javatestgen.context import find_existing_target_test, find_sample_tests, infer_test_package, load_rules
+from javatestgen.context import find_existing_target_test, find_related_sources, find_sample_tests, infer_test_package, load_rules
 from javatestgen.java_source import JavaClass
 
 
@@ -84,6 +84,35 @@ class ContextTests(unittest.TestCase):
 
         self.assertIsNotNone(existing)
         self.assertEqual(existing.source, "class ThingGeneratedTest {}")
+
+    def test_finds_related_same_package_source_referenced_by_target(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            main_root = Path(temp_dir) / "src" / "main" / "java"
+            package_dir = main_root / "com" / "example"
+            package_dir.mkdir(parents=True)
+            target_path = package_dir / "FilteringThing.java"
+            helper_path = package_dir / "ThingAppendable.java"
+            other_path = package_dir / "OtherThing.java"
+            target_path.write_text(
+                "package com.example; public class FilteringThing implements ThingAppendable {}",
+                encoding="utf-8",
+            )
+            helper_path.write_text(
+                "package com.example; public interface ThingAppendable { void appendTitle(CharSequence text); }",
+                encoding="utf-8",
+            )
+            other_path.write_text("package com.example; public class OtherThing {}", encoding="utf-8")
+            target = JavaClass(
+                source_path=target_path,
+                relative_path=Path("com/example/FilteringThing.java"),
+                source=target_path.read_text(encoding="utf-8"),
+                package="com.example",
+                type_name="FilteringThing",
+            )
+
+            related = find_related_sources(main_root, target)
+
+        self.assertEqual([source.path.name for source in related], ["ThingAppendable.java"])
 
     def test_infers_test_package_from_nearest_sample(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

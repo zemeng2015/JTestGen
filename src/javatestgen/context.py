@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from .java_source import JavaClass
+from .java_source import JavaClass, discover_java_classes
 
 
 DEFAULT_RULES = """Generated test rules:
@@ -26,6 +27,7 @@ class SampleTest:
 class PromptContext:
     rules: str
     sample_tests: list[SampleTest]
+    related_sources: list[SampleTest]
     existing_target_test: SampleTest | None = None
     test_package: str | None = None
 
@@ -41,6 +43,7 @@ def build_prompt_context(
     return PromptContext(
         rules=load_rules(project, rules_file),
         sample_tests=find_sample_tests(test_root, target, sample_limit, generated_test_path),
+        related_sources=find_related_sources(project / "src" / "main" / "java", target),
         existing_target_test=find_existing_target_test(generated_test_path),
         test_package=infer_test_package(test_root, target, generated_test_path),
     )
@@ -108,6 +111,29 @@ def find_existing_target_test(generated_test_path: Path) -> SampleTest | None:
     )
 
 
+def find_related_sources(main_root: Path, target: JavaClass, limit: int = 4) -> list[SampleTest]:
+    if limit <= 0 or not main_root.exists():
+        return []
+
+    referenced_names = _referenced_type_names(target.source)
+    related = []
+    for java_class in discover_java_classes(main_root, "**/*.java"):
+        if java_class.source_path.resolve() == target.source_path.resolve():
+            continue
+        if java_class.type_name not in referenced_names:
+            continue
+        if java_class.package != target.package and f"{java_class.package}.{java_class.type_name}" not in target.source:
+            continue
+        related.append(
+            SampleTest(
+                path=java_class.source_path,
+                source=java_class.source,
+            )
+        )
+    related.sort(key=lambda item: (0 if item.path.parent == target.source_path.parent else 1, str(item.path)))
+    return related[:limit]
+
+
 def infer_test_package(test_root: Path, target: JavaClass, generated_test_path: Path) -> str:
     if generated_test_path.exists():
         package_name = _read_package(generated_test_path)
@@ -136,3 +162,15 @@ def _package_distance(target_package: str, test_relative_parent: Path) -> int:
     common = len(set(target_parts) & set(test_parts))
     same_tail = target_parts[-1:] == test_parts[-1:]
     return (0 if same_tail else 10) + max(len(target_parts), len(test_parts)) - common
+
+
+def _referenced_type_names(source: str) -> set[str]:
+    names = set(re.findall(r"\b[A-Z][A-Za-z0-9_]*\b", source))
+    ignored = {
+        "Override",
+        "SuppressWarnings",
+        "Deprecated",
+        "FunctionalInterface",
+        "SafeVarargs",
+    }
+    return names - ignored
