@@ -1,0 +1,23 @@
+{
+  "baseline_class_line_coverage": 0.6190476190476191,
+  "baseline_project_line_coverage": 0.6666666666666666,
+  "class_line_coverage_delta": 0.38095238095238093,
+  "commit_sha": "in-repo fixture",
+  "duration_seconds": 34.262,
+  "errors": [],
+  "final_class_line_coverage": 1.0,
+  "final_project_line_coverage": 1.0,
+  "generated_test_path": "src/test/java/com/acme/orders/OrderFulfillmentServiceGeneratedTest.java",
+  "project": "Mockito-heavy service",
+  "project_line_coverage_delta": 0.33333333333333337,
+  "prompt_versions": {
+    "generation": "generation-v5",
+    "repair": "repair-v5"
+  },
+  "repair_attempts": 0,
+  "run_id": "20260527T003939625945Z-9140501f",
+  "status": "success",
+  "target_class": "com.acme.orders.OrderFulfillmentService",
+  "test_command": "mvn -q -Dtest=OrderFulfillmentServiceGeneratedTest test",
+  "verify_command": "mvn -q verify"
+}
