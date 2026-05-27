@@ -26,6 +26,7 @@ JTestGen helps teams remediate coverage gaps systematically.
 | --- | --- | ---: | ---: | --- |
 | FasterXML/jackson-core | `tools.jackson.core.io.DataOutputAsStream` | 55.56% | 100.00% | Passed |
 | Apache Commons CLI | `org.apache.commons.cli.help.FilterHelpAppendable` | 77.78% | 100.00% | Passed |
+| JTestGen demo legacy repo | `com.acme.billing.InvoiceCalculator` | 76.00% | 96.00% | Passed |
 
 See [DEMO.md](DEMO.md) for the full run details and artifacts.
 

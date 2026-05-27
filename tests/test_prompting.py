@@ -40,8 +40,10 @@ class PromptingTests(unittest.TestCase):
         self.assertIn("Java compilation error", request.user_prompt)
         self.assertIn("package exists in another module", request.user_prompt)
         self.assertIn("do not repeat the same wrong expected value", request.user_prompt)
+        self.assertIn("update the expected assertion", request.user_prompt)
         self.assertIn("nothing was thrown", request.user_prompt)
         self.assertIn("do not create new resources or files", request.user_prompt)
+        self.assertIn("adjusted expected value", request.user_prompt)
         self.assertIn("Return exactly one complete corrected Java source file.", request.user_prompt)
 
     def _java_class(self) -> JavaClass:

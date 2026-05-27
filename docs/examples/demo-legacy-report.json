@@ -1,0 +1,23 @@
+{
+  "baseline_class_line_coverage": 0.76,
+  "baseline_project_line_coverage": 0.8064516129032258,
+  "class_line_coverage_delta": 0.19999999999999996,
+  "commit_sha": "in-repo fixture",
+  "duration_seconds": 41.107,
+  "errors": [],
+  "final_class_line_coverage": 0.96,
+  "final_project_line_coverage": 0.967741935483871,
+  "generated_test_path": "src/test/java/com/acme/billing/InvoiceCalculatorGeneratedTest.java",
+  "project": "JTestGen demo legacy repo",
+  "project_line_coverage_delta": 0.16129032258064524,
+  "prompt_versions": {
+    "generation": "generation-v5",
+    "repair": "repair-v5"
+  },
+  "repair_attempts": 1,
+  "run_id": "20260527T003054565084Z-f9ab8d10",
+  "status": "success",
+  "target_class": "com.acme.billing.InvoiceCalculator",
+  "test_command": "mvn -q -Dtest=InvoiceCalculatorGeneratedTest test",
+  "verify_command": "mvn -q verify"
+}

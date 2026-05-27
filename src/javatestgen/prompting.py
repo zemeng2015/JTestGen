@@ -6,8 +6,8 @@ from .generator import GenerationRequest
 from .java_source import JavaClass
 
 
-GENERATION_PROMPT_VERSION = "generation-v4"
-REPAIR_PROMPT_VERSION = "repair-v4"
+GENERATION_PROMPT_VERSION = "generation-v5"
+REPAIR_PROMPT_VERSION = "repair-v5"
 
 
 SYSTEM_PROMPT = """You generate production-quality Java unit tests.
@@ -101,11 +101,13 @@ Repair strategy:
 - First infer the failure category from Maven output: Java compilation error, missing import/dependency, test discovery/class-name issue, checked exception, assertion failure, Mockito/mocking issue, or runtime exception.
 - Make the smallest source change that addresses the failure while preserving coverage intent.
 - If an assertion failure shows expected/actual values, do not repeat the same wrong expected value. Re-derive the expected value from production source, existing sample tests, or the actual deterministic Maven output when it matches the public behavior.
+- For deterministic value assertions such as BigDecimal, strings, numbers, enums, collections, or records: when Maven reports `expected: <X> but was: <Y>`, update the expected assertion to `Y` if `Y` is consistent with the production source and the test input. Do not keep or reintroduce `X`.
 - If the generated test expected an exception but Maven says nothing was thrown, remove that exception assertion and assert the actual public result or state instead.
 - If Maven output shows a missing file, missing classpath resource, or unresolved path, do not create new resources or files. Rewrite the test to use existing project resources, in-memory data, or a stable negative-path assertion.
 - If an assertion is brittle or behavior is uncertain, replace it with a stable public-contract assertion that still executes the target behavior.
 - Do not add sleeps, network calls, dependency changes, build changes, or production-code changes.
 - Do not invent dependencies, resources, helper files, or test fixtures. Use only APIs, libraries, and resources already implied by the source or sample tests.
+- Do not add comments like "adjusted expected value"; the repaired test should read like normal human-written project tests.
 - Keep package `{test_package}` and class name `{test_class_name}` unless the Maven output proves they are wrong.
 - If Maven says the package exists in another module, move the test to the sample-test package `{test_package}` and import the production class.
 - Follow the project rules and sample test style.
