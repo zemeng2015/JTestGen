@@ -60,6 +60,88 @@ class RunArtifacts:
     def flush(self) -> None:
         if not self.enabled:
             return
-        path = self.root / "report.json"
-        self.report.artifacts["report.json"] = str(path)
-        path.write_text(json.dumps(asdict(self.report), indent=2, sort_keys=True), encoding="utf-8")
+        report_path = self.root / "report.json"
+        summary_path = self.root / "summary.md"
+        self.report.artifacts["report.json"] = str(report_path)
+        self.report.artifacts["summary.md"] = str(summary_path)
+        report_path.write_text(json.dumps(asdict(self.report), indent=2, sort_keys=True), encoding="utf-8")
+        summary_path.write_text(format_summary_markdown(self.report), encoding="utf-8")
+
+
+def format_summary_markdown(report: RunReport) -> str:
+    lines = [
+        "# JTestGen Run Summary",
+        "",
+        f"- Run ID: `{report.run_id}`",
+        f"- Status: `{report.status}`",
+        f"- Project: `{report.project}`",
+    ]
+    if report.target_class:
+        lines.append(f"- Target class: `{report.target_class}`")
+    if report.generated_test_path:
+        lines.append(f"- Generated test: `{report.generated_test_path}`")
+    if report.duration_seconds is not None:
+        lines.append(f"- Duration: `{report.duration_seconds:.3f}s`")
+    lines.extend(["", "## Coverage"])
+    lines.extend(
+        [
+            "| Scope | Before | After | Delta |",
+            "| --- | ---: | ---: | ---: |",
+            (
+                "| Target class | "
+                f"{_percent(report.baseline_class_line_coverage)} | "
+                f"{_percent(report.final_class_line_coverage)} | "
+                f"{_signed_percent(report.class_line_coverage_delta)} |"
+            ),
+            (
+                "| Project | "
+                f"{_percent(report.baseline_project_line_coverage)} | "
+                f"{_percent(report.final_project_line_coverage)} | "
+                f"{_signed_percent(report.project_line_coverage_delta)} |"
+            ),
+        ]
+    )
+    lines.extend(
+        [
+            "",
+            "## Validation",
+            "",
+            f"- Repair attempts: `{report.repair_attempts}`",
+            f"- Verify command: `{report.verify_command or 'not recorded'}`",
+            f"- Test command: `{report.test_command or 'not recorded'}`",
+        ]
+    )
+    if report.prompt_versions:
+        lines.extend(["", "## Prompt Versions", ""])
+        for name, version in sorted(report.prompt_versions.items()):
+            lines.append(f"- {name}: `{version}`")
+    if report.errors:
+        lines.extend(["", "## Errors", ""])
+        for error in report.errors:
+            lines.append(f"- {error}")
+    lines.extend(["", "## Artifacts", ""])
+    for name in sorted(report.artifacts):
+        lines.append(f"- `{name}`")
+    lines.extend(
+        [
+            "",
+            "## Review Note",
+            "",
+            "Generated tests are reviewable candidates. Maven success and coverage improvement do not prove business correctness.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _percent(value: float | None) -> str:
+    if value is None:
+        return "n/a"
+    return f"{value:.2%}"
+
+
+def _signed_percent(value: float | None) -> str:
+    if value is None:
+        return "n/a"
+    sign = "+" if value >= 0 else ""
+    return f"{sign}{value:.2%}"

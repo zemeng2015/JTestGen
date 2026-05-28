@@ -14,7 +14,7 @@ Help one Java/Maven team turn selected JaCoCo coverage gaps into reviewable, Mav
 - source, related source, and sample test context
 - Maven validation of generated tests
 - repair loop using Maven output
-- run artifacts with prompts, logs, generated revisions, and `report.json`
+- run artifacts with prompts, logs, generated revisions, `report.json`, and `summary.md`
 - benchmark reports for credible examples
 - manual service-assisted coverage audit
 
@@ -87,9 +87,8 @@ A generated test candidate counts as successful only when:
 Priority order:
 
 1. fifth benchmark: Spring Boot service demo
-2. improved report summary
-3. batch mode for multiple target classes
-4. GitHub Actions example workflow
-5. patch/PR generation mode
+2. batch mode for multiple target classes
+3. GitHub Actions example workflow
+4. patch/PR generation mode
 
 Do not build Web UI until at least one real team has completed an audit or PR workflow.

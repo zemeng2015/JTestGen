@@ -140,6 +140,8 @@ By default, every run writes an inspectable artifact bundle into the target Java
 
 The bundle includes `report.json`, prompt snapshots, Maven logs, and generated test revisions. Use `--no-artifacts` to disable this.
 
+Each run also writes `summary.md`, a human-readable coverage and validation summary suitable for PR descriptions, audit notes, or Tech Lead review.
+
 See [docs/examples/jackson-core-report.json](docs/examples/jackson-core-report.json) for a real demo-shaped report.
 
 ## Safety Model
