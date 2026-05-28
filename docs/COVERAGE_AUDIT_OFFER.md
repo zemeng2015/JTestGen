@@ -34,8 +34,10 @@ Option B:
 
 Coverage Improvement PR Package:
 
-- generate tests for 5-10 target classes
+- generate tests for 1-3 target classes in the first paid/trial package
 - run Maven validation
 - repair failures
 - provide before/after coverage report
 - deliver as PR or patch
+
+Suggested first paid range: `$100-$300`.

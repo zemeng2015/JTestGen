@@ -4,13 +4,16 @@ The open-source CLI is the foundation, but enterprise and team usage requires wo
 
 ## Next 30 days
 
-- benchmark suite across 5+ Java projects
+- complete benchmark suite across 5+ Java projects
+- run 3-5 warm outreach conversations with Java/Spring Tech Leads
+- prepare a service-assisted coverage audit package
 - batch coverage remediation
 - improved report summary
 - GitHub Actions example workflow
 
 ## Next 90 days
 
+- complete one real coverage audit or test improvement PR with an external team
 - PR/patch generation mode
 - HTML report dashboard
 - Maven multi-module support
