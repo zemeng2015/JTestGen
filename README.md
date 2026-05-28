@@ -28,6 +28,7 @@ JTestGen helps teams remediate coverage gaps systematically.
 | Apache Commons CLI | `org.apache.commons.cli.help.FilterHelpAppendable` | 77.78% | 100.00% | Passed |
 | JTestGen demo legacy repo | `com.acme.billing.InvoiceCalculator` | 76.00% | 96.00% | Passed |
 | Mockito-heavy service | `com.acme.orders.OrderFulfillmentService` | 61.90% | 100.00% | Passed |
+| Spring Boot service | `com.acme.subscriptions.SubscriptionRenewalService` | 70.83% | 95.83% | Passed |
 
 See [DEMO.md](DEMO.md) for the full run details and artifacts.
 

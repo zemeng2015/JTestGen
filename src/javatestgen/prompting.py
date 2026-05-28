@@ -6,8 +6,8 @@ from .generator import GenerationRequest
 from .java_source import JavaClass
 
 
-GENERATION_PROMPT_VERSION = "generation-v5"
-REPAIR_PROMPT_VERSION = "repair-v5"
+GENERATION_PROMPT_VERSION = "generation-v7"
+REPAIR_PROMPT_VERSION = "repair-v7"
 
 
 SYSTEM_PROMPT = """You generate production-quality Java unit tests.
@@ -104,6 +104,8 @@ Repair strategy:
 - For deterministic value assertions such as BigDecimal, strings, numbers, enums, collections, or records: when Maven reports `expected: <X> but was: <Y>`, update the expected assertion to `Y` if `Y` is consistent with the production source and the test input. Do not keep or reintroduce `X`.
 - If the generated test expected an exception but Maven says nothing was thrown, remove that exception assertion and assert the actual public result or state instead.
 - If Maven output shows a missing file, missing classpath resource, or unresolved path, do not create new resources or files. Rewrite the test to use existing project resources, in-memory data, or a stable negative-path assertion.
+- If Maven output shows Mockito `UnnecessaryStubbingException`, remove the unused `when(...)` stubbing from that test. Do not add lenient strictness unless existing sample tests already use it.
+- If Maven output shows Mockito `Wanted but not invoked`, remove or correct the failing `verify(...)`. Only verify interactions that are actually required by the production source branch exercised by that test.
 - If an assertion is brittle or behavior is uncertain, replace it with a stable public-contract assertion that still executes the target behavior.
 - Do not add sleeps, network calls, dependency changes, build changes, or production-code changes.
 - Do not invent dependencies, resources, helper files, or test fixtures. Use only APIs, libraries, and resources already implied by the source or sample tests.

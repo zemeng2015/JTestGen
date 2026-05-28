@@ -43,6 +43,8 @@ class PromptingTests(unittest.TestCase):
         self.assertIn("update the expected assertion", request.user_prompt)
         self.assertIn("nothing was thrown", request.user_prompt)
         self.assertIn("do not create new resources or files", request.user_prompt)
+        self.assertIn("UnnecessaryStubbingException", request.user_prompt)
+        self.assertIn("Wanted but not invoked", request.user_prompt)
         self.assertIn("adjusted expected value", request.user_prompt)
         self.assertIn("Return exactly one complete corrected Java source file.", request.user_prompt)
 

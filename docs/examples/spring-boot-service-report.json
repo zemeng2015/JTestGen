@@ -1,0 +1,23 @@
+{
+  "baseline_class_line_coverage": 0.7083333333333334,
+  "baseline_project_line_coverage": 0.7,
+  "class_line_coverage_delta": 0.25,
+  "commit_sha": "in-repo fixture",
+  "duration_seconds": 47.797,
+  "errors": [],
+  "final_class_line_coverage": 0.9583333333333334,
+  "final_project_line_coverage": 0.9,
+  "generated_test_path": "src/test/java/com/acme/subscriptions/SubscriptionRenewalServiceGeneratedTest.java",
+  "project": "Spring Boot service",
+  "project_line_coverage_delta": 0.20000000000000007,
+  "prompt_versions": {
+    "generation": "generation-v7",
+    "repair": "repair-v7"
+  },
+  "repair_attempts": 1,
+  "run_id": "20260528T210514683467Z-5f47ff42",
+  "status": "success",
+  "target_class": "com.acme.subscriptions.SubscriptionRenewalService",
+  "test_command": "mvn -q -Dtest=SubscriptionRenewalServiceGeneratedTest test",
+  "verify_command": "mvn -q verify"
+}
