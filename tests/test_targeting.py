@@ -3,7 +3,7 @@ from pathlib import Path
 
 from javatestgen.coverage import ClassCoverage
 from javatestgen.java_source import JavaClass
-from javatestgen.targeting import build_target_candidates, pick_target_candidate, skip_reason
+from javatestgen.targeting import build_target_candidates, pick_target_candidate, rank_target_candidates, skip_reason
 
 
 class TargetingTests(unittest.TestCase):
@@ -34,6 +34,20 @@ class TargetingTests(unittest.TestCase):
         )
 
         self.assertEqual(skip_reason(java_class, self._coverage("com.example.generated.GeneratedThing", "GeneratedThing.java", 0, 3)), "generated source")
+
+    def test_rank_target_candidates_returns_requested_limit(self) -> None:
+        first = self._java_class("FirstThing", "package com.example; public class FirstThing {}")
+        second = self._java_class("SecondThing", "package com.example; public class SecondThing {}")
+        third = self._java_class("ThirdThing", "package com.example; public class ThirdThing {}")
+        coverages = [
+            self._coverage("com.example.FirstThing", "FirstThing.java", 1, 9),
+            self._coverage("com.example.SecondThing", "SecondThing.java", 5, 5),
+            self._coverage("com.example.ThirdThing", "ThirdThing.java", 8, 2),
+        ]
+
+        ranked = rank_target_candidates(build_target_candidates([first, second, third], coverages), limit=2)
+
+        self.assertEqual([candidate.java_class.type_name for candidate in ranked], ["FirstThing", "SecondThing"])
 
     def _java_class(self, type_name: str, source: str) -> JavaClass:
         return JavaClass(

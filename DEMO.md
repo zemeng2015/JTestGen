@@ -29,6 +29,18 @@ Set your API key:
 $env:OPENAI_API_KEY="..."
 ```
 
+Optional readiness check:
+
+```powershell
+java-testgen doctor C:\tmp\jackson-core
+```
+
+Optional target scan without calling an LLM:
+
+```powershell
+java-testgen scan C:\tmp\jackson-core --top 5 --verify-arg=-DskipITs
+```
+
 Optional model override:
 
 ```powershell
@@ -83,7 +95,7 @@ Show these four things:
 1. the target class and baseline coverage
 2. the generated test file
 3. Maven pass/fail logs and repair attempts
-4. `summary.md` with before/after coverage
+4. `summary.md` or `report.html` with before/after coverage
 
 ## Artifacts
 
@@ -93,6 +105,7 @@ Each run writes observability artifacts under the target project:
 .jtestgen/runs/<run-id>/
   report.json
   summary.md
+  report.html
   prompt.initial.system.txt
   prompt.initial.user.txt
   prompt.repair.1.system.txt

@@ -34,9 +34,18 @@ def build_target_candidates(classes: list[JavaClass], coverages: list[ClassCover
 
 
 def pick_target_candidate(candidates: list[TargetCandidate]) -> TargetCandidate | None:
-    selectable = [candidate for candidate in candidates if candidate.selectable and candidate.coverage.total_lines > 0]
-    if not selectable:
+    ranked = rank_target_candidates(candidates)
+    if not ranked:
         return None
+    return ranked[0]
+
+
+def rank_target_candidates(candidates: list[TargetCandidate], limit: int | None = None) -> list[TargetCandidate]:
+    selectable = [
+        candidate
+        for candidate in candidates
+        if candidate.selectable and candidate.coverage.total_lines > 0 and candidate.coverage.line_ratio < 1.0
+    ]
     return sorted(
         selectable,
         key=lambda candidate: (
@@ -45,7 +54,7 @@ def pick_target_candidate(candidates: list[TargetCandidate]) -> TargetCandidate 
             -candidate.coverage.line_missed,
             candidate.coverage.qualified_name,
         ),
-    )[0]
+    )[:limit]
 
 
 def skip_reason(java_class: JavaClass, coverage: ClassCoverage) -> str | None:

@@ -107,6 +107,7 @@ Have a Java/Maven project with JaCoCo coverage gaps?
 - [Coverage audit offer](docs/COVERAGE_AUDIT_OFFER.md)
 - [Demo script](docs/DEMO_SCRIPT.md)
 - [Outreach notes](docs/OUTREACH.md)
+- [GitHub Actions example](docs/GITHUB_ACTIONS.md)
 - [Enterprise roadmap](docs/ENTERPRISE_ROADMAP.md)
 - [Example run report](docs/examples/jackson-core-report.json)
 
@@ -156,6 +157,18 @@ Artifacts written to: .jtestgen/runs/<run-id>/
 
 ## Commands
 
+Check whether a Maven project is ready for JTestGen:
+
+```powershell
+java-testgen doctor C:\path\to\java-project
+```
+
+List low-coverage targets without calling an LLM:
+
+```powershell
+java-testgen scan C:\path\to\java-project --top 10
+```
+
 Generate one coverage-guided test and run the repair loop:
 
 ```powershell
@@ -197,7 +210,7 @@ By default, every run writes an inspectable artifact bundle into the target Java
 .jtestgen/runs/<run-id>/
 ```
 
-The bundle includes `report.json`, prompt snapshots, Maven logs, and generated test revisions. Use `--no-artifacts` to disable this.
+The bundle includes `report.json`, `summary.md`, `report.html`, prompt snapshots, Maven logs, and generated test revisions. Use `--no-artifacts` to disable this.
 
 Each run also writes `summary.md`, a human-readable coverage and validation summary suitable for PR descriptions, audit notes, or Tech Lead review.
 

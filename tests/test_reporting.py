@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from javatestgen.reporting import RunArtifacts, RunReport, format_summary_markdown
+from javatestgen.reporting import RunArtifacts, RunReport, format_html_report, format_summary_markdown
 
 
 class ReportingTests(unittest.TestCase):
@@ -60,6 +60,37 @@ class ReportingTests(unittest.TestCase):
 
         self.assertEqual(report["artifacts"]["summary.md"], str(summary_path))
         self.assertIn("JTestGen Run Summary", summary)
+
+    def test_flush_writes_html_report_artifact(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            artifacts = RunArtifacts(Path(temp_dir))
+            artifacts.update(
+                status="success",
+                target_class="com.example.OrderService",
+                baseline_class_line_coverage=0.5,
+                final_class_line_coverage=1.0,
+                class_line_coverage_delta=0.5,
+            )
+            html_path = artifacts.root / "report.html"
+            report = json.loads((artifacts.root / "report.json").read_text(encoding="utf-8"))
+            html = html_path.read_text(encoding="utf-8")
+
+        self.assertEqual(report["artifacts"]["report.html"], str(html_path))
+        self.assertIn("<!doctype html>", html)
+        self.assertIn("com.example.OrderService", html)
+
+    def test_html_report_escapes_generated_content(self) -> None:
+        report = RunReport(
+            run_id="run-1",
+            project="<project>",
+            status="success",
+            target_class="com.example.OrderService",
+        )
+
+        html = format_html_report(report)
+
+        self.assertIn("&lt;project&gt;", html)
+        self.assertNotIn("<project>", html)
 
     def test_run_ids_are_unique_for_fast_runs(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
