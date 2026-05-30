@@ -2,14 +2,36 @@
 
 [![CI](https://github.com/zemeng2015/JTestGen/actions/workflows/ci.yml/badge.svg)](https://github.com/zemeng2015/JTestGen/actions/workflows/ci.yml)
 
-AI Coverage Remediation Agent for Enterprise Java Teams
+AI Coverage Remediation Agent for Java Teams
 
-JTestGen helps Java teams systematically improve unit test coverage by combining JaCoCo-guided target selection, project-aware prompt construction, Maven-validated test generation, repair-loop prompting, and auditable run artifacts.
+JTestGen helps Java teams turn low-coverage Maven classes into reviewable, Maven-passing test improvement PRs.
+
+It combines JaCoCo-guided target selection, project-aware prompt construction, Maven-validated test generation, repair-loop prompting, and auditable run artifacts.
 
 JTestGen is not a generic code completion tool. It is a workflow for turning Java coverage gaps into passing JUnit tests with measurable before/after coverage reports.
 
 Copilot helps developers write tests faster.  
 JTestGen helps teams remediate coverage gaps systematically.
+
+## Who This Is For
+
+- Java/Spring teams with legacy Maven repositories
+- Tech Leads with JaCoCo coverage gates or quality KPIs
+- teams that want coverage improvements as reviewable PRs, not loose generated files
+- consulting teams that need to deliver measurable test coverage work
+- teams that prefer local/BYOK AI workflows with inspectable artifacts
+
+## What You Get
+
+For each successful run, JTestGen produces:
+
+- selected target class and baseline coverage
+- generated JUnit test candidate
+- Maven validation logs
+- repair-attempt history when the first test fails
+- final before/after coverage result
+- `summary.md` suitable for a PR description or audit note
+- `report.json` for repeatable analysis
 
 ## Why JTestGen?
 
@@ -32,12 +54,47 @@ JTestGen helps teams remediate coverage gaps systematically.
 
 See [DEMO.md](DEMO.md) for the full run details and artifacts.
 
-## Try It / Request a Coverage Audit
+## Try It in 10 Minutes
+
+The fastest public demo uses `FasterXML/jackson-core`:
+
+```powershell
+git clone https://github.com/zemeng2015/JTestGen.git
+cd JTestGen
+
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -e .
+
+git clone https://github.com/FasterXML/jackson-core.git C:\tmp\jackson-core
+
+$env:OPENAI_API_KEY="..."
+
+java-testgen run C:\tmp\jackson-core `
+  --target-class tools.jackson.core.io.DataOutputAsStream `
+  --test-suffix GeneratedTest `
+  --target-coverage 0.80 `
+  --verify-arg=-DskipITs
+```
+
+Expected demo shape:
+
+```text
+Selected target: tools.jackson.core.io.DataOutputAsStream
+Generated test passed
+Class line coverage: 55.56% -> 100.00%
+Artifacts written to: .jtestgen/runs/<run-id>/
+```
+
+See [DEMO.md](DEMO.md) for the full walkthrough, including Maven path options on Windows.
+
+## Request a Coverage Audit
 
 Have a Java/Maven project with JaCoCo coverage gaps?
 
 - Run JTestGen locally and review `.jtestgen/runs/<run-id>/report.json`
 - Or open a [Coverage Audit Request issue](.github/ISSUE_TEMPLATE/coverage_audit_request.md)
+- Or contact me for an early pilot: I am looking for 1-2 Java teams for a `$100-$300` AI-assisted coverage audit and test improvement PR.
 
 ## Project Guide
 
@@ -48,6 +105,8 @@ Have a Java/Maven project with JaCoCo coverage gaps?
 - [Benchmarks](docs/BENCHMARKS.md)
 - [Safety and limits](docs/SAFETY_AND_LIMITS.md)
 - [Coverage audit offer](docs/COVERAGE_AUDIT_OFFER.md)
+- [Demo script](docs/DEMO_SCRIPT.md)
+- [Outreach notes](docs/OUTREACH.md)
 - [Enterprise roadmap](docs/ENTERPRISE_ROADMAP.md)
 - [Example run report](docs/examples/jackson-core-report.json)
 
@@ -67,7 +126,7 @@ JTestGen = JaCoCo target selection + project-aware prompt + Maven validation + r
 8. Runs final coverage
 9. Writes `report.json` and run artifacts
 
-## Quick Start
+## Install
 
 ```powershell
 python -m venv .venv
@@ -178,14 +237,6 @@ See [docs/examples/jackson-core-report.json](docs/examples/jackson-core-report.j
 | Patch-only PR mode | Planned |
 | CI/GitHub Actions integration | Planned |
 
-## Who This Is For
-
-- Java teams with legacy Maven projects
-- teams with JaCoCo coverage gates
-- teams that need measurable coverage improvement
-- consulting teams that need to deliver coverage improvements
-- teams that want local/private endpoint AI workflows
-
 ## Not For
 
 - replacing human review
@@ -252,7 +303,17 @@ Enterprise-oriented:
 
 ## Call for Early Users
 
-Looking for Java teams with low-coverage Maven projects. If you have a repo with JaCoCo coverage gaps, try JTestGen locally or open an issue for a free coverage audit.
+Looking for Java teams with low-coverage Maven projects.
+
+If you have a reproducible Maven + JaCoCo project, I can help with an early coverage audit:
+
+- identify 1-3 low-coverage classes
+- generate and repair test candidates
+- run Maven validation
+- provide before/after coverage
+- deliver a reviewable PR or patch
+
+Start with the [Coverage Audit Request issue](.github/ISSUE_TEMPLATE/coverage_audit_request.md) or the service outline in [docs/COVERAGE_AUDIT_OFFER.md](docs/COVERAGE_AUDIT_OFFER.md).
 
 ## Notes
 
