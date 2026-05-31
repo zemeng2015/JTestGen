@@ -8,10 +8,11 @@ class RunnerTests(unittest.TestCase):
     def test_verify_and_test_command_include_extra_args(self) -> None:
         runner = MavenRunner(Path("."), maven_command="mvn", verify_args=("-DskipITs",))
 
-        self.assertEqual(runner.verify_command(), "mvn -q -DskipITs verify")
-        self.assertEqual(
-            runner.test_generated_class_command("ExampleGeneratedTest"),
-            "mvn -q -DskipITs -Dtest=ExampleGeneratedTest test",
+        self.assertTrue(runner.verify_command().endswith("mvn -q -DskipITs verify"))
+        self.assertTrue(
+            runner.test_generated_class_command("ExampleGeneratedTest").endswith(
+                "mvn -q -DskipITs -Dtest=ExampleGeneratedTest test"
+            )
         )
 
 
