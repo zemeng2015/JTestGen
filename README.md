@@ -181,6 +181,18 @@ Force a known class instead of using automatic lowest-coverage selection:
 java-testgen run C:\path\to\java-project --target-class com.example.OrderService
 ```
 
+Process up to three automatically selected low-coverage classes:
+
+```powershell
+java-testgen run C:\path\to\java-project --max-targets 3
+```
+
+Write a reviewable patch for generated tests:
+
+```powershell
+java-testgen run C:\path\to\java-project --target-class com.example.OrderService --patch-output C:\tmp\jtestgen.patch
+```
+
 Dry-run prompts without writing files or running Maven:
 
 ```powershell
@@ -200,6 +212,8 @@ Useful options:
 --verify-arg        Extra Maven argument for baseline/final verify, repeat as needed
 --test-suffix      Generated test class suffix, default Test
 --model            Override OPENAI_MODEL
+--max-targets      Maximum number of automatically selected target classes to process
+--patch-output     Write a git patch for generated tests after a successful run
 ```
 
 ## Run Artifacts
@@ -248,6 +262,7 @@ See [docs/examples/jackson-core-report.json](docs/examples/jackson-core-report.j
 | Maven multi-module mapping | Not yet |
 | Automatic build-file edits | Not yet |
 | Patch-only PR mode | Planned |
+| Patch output | Supported |
 | CI/GitHub Actions integration | Planned |
 
 ## Not For

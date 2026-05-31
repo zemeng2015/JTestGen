@@ -19,6 +19,8 @@ class RunConfig:
     save_artifacts: bool = True
     model: str | None = None
     dry_run: bool = False
+    max_targets: int = 1
+    patch_output: Path | None = None
 
     @property
     def main_source_root(self) -> Path:

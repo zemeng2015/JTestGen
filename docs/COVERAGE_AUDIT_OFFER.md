@@ -38,6 +38,6 @@ Coverage Improvement PR Package:
 - run Maven validation
 - repair failures
 - provide before/after coverage report
-- deliver as PR or patch
+- deliver as PR, patch, or generated-test artifact bundle
 
 Suggested first paid range: `$100-$300`.

@@ -16,6 +16,13 @@ class CliTests(unittest.TestCase):
         self.assertEqual(args.top, 3)
         self.assertTrue(args.skip_verify)
 
+    def test_parser_supports_patch_output_and_max_targets(self) -> None:
+        args = build_parser().parse_args(["run", ".", "--max-targets", "3", "--patch-output", "jtestgen.patch"])
+
+        self.assertEqual(args.command, "run")
+        self.assertEqual(args.max_targets, 3)
+        self.assertEqual(str(args.patch_output), "jtestgen.patch")
+
 
 if __name__ == "__main__":
     unittest.main()

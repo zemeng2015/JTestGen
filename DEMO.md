@@ -70,6 +70,17 @@ java-testgen run C:\tmp\jackson-core `
   --verify-arg=-DskipITs
 ```
 
+For a pilot audit, you can also process up to three automatically selected targets and write a patch:
+
+```powershell
+java-testgen run C:\tmp\jackson-core `
+  --max-targets 3 `
+  --test-suffix GeneratedTest `
+  --target-coverage 0.80 `
+  --patch-output C:\tmp\jtestgen-jackson-core.patch `
+  --verify-arg=-DskipITs
+```
+
 ## Observed Result
 
 ```text
@@ -96,6 +107,7 @@ Show these four things:
 2. the generated test file
 3. Maven pass/fail logs and repair attempts
 4. `summary.md` or `report.html` with before/after coverage
+5. optional `generated.patch` or `--patch-output` file for code review
 
 ## Artifacts
 
@@ -117,6 +129,7 @@ Each run writes observability artifacts under the target project:
   generated.initial.java
   generated.repair.1.java
   generated.final.java
+  generated.patch
 ```
 
 These files make the LLM workflow inspectable and reproducible.

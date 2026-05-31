@@ -62,6 +62,8 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--model", default=None, help="Override OPENAI_MODEL.")
     run.add_argument("--no-artifacts", action="store_true", help="Do not write .jtestgen run artifacts.")
     run.add_argument("--dry-run", action="store_true", help="Print prompts without writing or running tests.")
+    run.add_argument("--max-targets", type=int, default=1, help="Maximum number of automatically selected target classes to process.")
+    run.add_argument("--patch-output", type=Path, default=None, help="Write a git patch for generated tests after a successful run.")
     return parser
 
 
@@ -88,6 +90,8 @@ def main(argv: list[str] | None = None) -> int:
         save_artifacts=not args.no_artifacts,
         model=args.model,
         dry_run=args.dry_run,
+        max_targets=args.max_targets,
+        patch_output=args.patch_output.resolve() if args.patch_output else None,
     )
 
     workflow = TestGenerationWorkflow(

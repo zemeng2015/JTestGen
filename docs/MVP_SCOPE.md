@@ -17,6 +17,8 @@ Help one Java/Maven team turn selected JaCoCo coverage gaps into reviewable, Mav
 - run artifacts with prompts, logs, generated revisions, `report.json`, and `summary.md`
 - benchmark reports for credible examples
 - manual service-assisted coverage audit
+- patch output for generated tests
+- processing multiple automatically selected targets in one run
 
 ## Out of scope for MVP
 
@@ -43,7 +45,8 @@ Help one Java/Maven team turn selected JaCoCo coverage gaps into reviewable, Mav
 8. JTestGen repairs failures using Maven output.
 9. JTestGen runs final coverage.
 10. JTestGen writes artifacts and a before/after report.
-11. Human reviews the generated test before merge.
+11. JTestGen optionally writes a reviewable patch.
+12. Human reviews the generated test before merge.
 
 ## MVP user promise
 
@@ -89,6 +92,6 @@ Priority order:
 1. fifth benchmark: Spring Boot service demo
 2. batch mode for multiple target classes
 3. GitHub Actions example workflow
-4. patch/PR generation mode
+4. PR branch creation or GitHub CLI integration
 
 Do not build Web UI until at least one real team has completed an audit or PR workflow.
