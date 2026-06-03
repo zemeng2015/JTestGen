@@ -103,6 +103,7 @@ Have a Java/Maven project with JaCoCo coverage gaps?
 - [Strategy](docs/STRATEGY.md)
 - [MVP scope](docs/MVP_SCOPE.md)
 - [Benchmarks](docs/BENCHMARKS.md)
+- [Demo recording script](docs/DEMO_RECORDING_SCRIPT.md)
 - [Safety and limits](docs/SAFETY_AND_LIMITS.md)
 - [Coverage audit offer](docs/COVERAGE_AUDIT_OFFER.md)
 - [Demo script](docs/DEMO_SCRIPT.md)
