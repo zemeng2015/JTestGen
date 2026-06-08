@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/zemeng2015/JTestGen/actions/workflows/ci.yml/badge.svg)](https://github.com/zemeng2015/JTestGen/actions/workflows/ci.yml)
 
+[English](README.md) | [中文说明](README.zh-CN.md)
+
 AI Coverage Remediation Agent for Java Teams
 
 JTestGen helps Java teams turn low-coverage Maven classes into reviewable, Maven-passing test improvement PRs.
