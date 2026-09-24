@@ -111,10 +111,15 @@ class ContributionTests(unittest.TestCase):
             if argv[:3] == ["gh", "api", "user"]:
                 return "contributor"
             if argv[:3] == ["gh", "pr", "list"]:
+                self.assertEqual(argv[argv.index("--head") + 1], self.manifest["branch"])
+                self.assertIn("headRepositoryOwner", argv[argv.index("--json") + 1])
+                unrelated = dict(url="https://github.com/example/project/pull/999", state="OPEN",
+                                 headRefOid="unrelated", headRepositoryOwner=dict(login="another-fork-owner"))
                 if created:
                     sha = command(["git", "rev-parse", "HEAD"], self.repo)
-                    return json.dumps([dict(url="https://github.com/example/project/pull/1", state="OPEN", headRefOid=sha)])
-                return "[]"
+                    return json.dumps([unrelated, dict(url="https://github.com/example/project/pull/1", state="OPEN", headRefOid=sha,
+                                                       headRepositoryOwner=dict(login="CONTRIBUTOR"))])
+                return json.dumps([unrelated])
             if argv[:3] == ["gh", "repo", "fork"]:
                 self.assertEqual(argv, ["gh", "repo", "fork", "example/project", "--clone=false"])
                 return ""
@@ -136,11 +141,30 @@ class ContributionTests(unittest.TestCase):
         self.assertEqual(sum(c[:3] == ["gh", "pr", "create"] for c in calls), 1)
         tracked = command(["git", "show", "--pretty=", "--name-only", "HEAD"], self.repo)
         self.assertEqual(tracked, self.relative)
-        self.assertEqual(json.loads(self.manifest_path.read_text())["status"], "published")
+        receipt = json.loads(self.manifest_path.read_text())
+        self.assertEqual(receipt["status"], "published")
+        self.assertNotIn("publish_error", receipt)
 
     def test_unsafe_module_rejected_before_clone(self):
         with self.assertRaises(ContributionError):
             prepare("a/b", self.workspace / "new", RunConfig(project=self.repo), module="../outside")
+
+    def test_matching_fork_with_wrong_head_refuses_duplicate_creation(self):
+        calls = []
+
+        def fake(argv, cwd):
+            calls.append(argv)
+            if argv[:3] == ["gh", "api", "user"]:
+                return "contributor"
+            if argv[:3] == ["gh", "pr", "list"]:
+                return json.dumps([dict(url="https://github.com/example/project/pull/1", state="OPEN",
+                                        headRefOid="changed-head", headRepositoryOwner=dict(login="contributor"))])
+            return command(argv, cwd)
+
+        with patch("javatestgen.contribution.command", side_effect=fake):
+            with self.assertRaisesRegex(ContributionError, "different commit"):
+                publish(self.manifest_path)
+        self.assertFalse(any(c[:3] == ["gh", "pr", "create"] or c[:2] == ["git", "push"] for c in calls))
 
     def test_module_manifest_accepts_only_tests_under_selected_module(self):
         module = self.repo / "core"

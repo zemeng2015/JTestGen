@@ -244,13 +244,19 @@ def publish(manifest_path: Path) -> int:
         manifest.update(publisher=login, status="publishing")
         save(manifest_path, manifest)
         head = f"{login}:{manifest['branch']}"
-        existing = json.loads(command(["gh", "pr", "list", "--repo", repository, "--head", head,
-                                      "--state", "all", "--json", "url,state,headRefOid"], project))
+        # gh pr list --head takes a branch, unlike pr create --head OWNER:BRANCH.
+        # Filter fork ownership explicitly so another user's identically named
+        # branch cannot be mistaken for this contribution.
+        candidates = json.loads(command(["gh", "pr", "list", "--repo", repository, "--head", manifest["branch"],
+                                        "--state", "all", "--limit", "1000", "--json", "url,state,headRefOid,headRepositoryOwner"], project))
+        existing = [candidate for candidate in candidates
+                    if (candidate.get("headRepositoryOwner") or {}).get("login", "").casefold() == login.casefold()]
         if existing:
             match = existing[0]
             if match["state"] != "OPEN" or match["headRefOid"] != manifest.get("commit_sha"):
                 raise ContributionError("Existing PR is closed or has a different commit; refusing a duplicate.")
             manifest.update(status="published", pr_url=match["url"])
+            manifest.pop("publish_error", None)
             save(manifest_path, manifest)
             print(match["url"])
             return 0
