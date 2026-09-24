@@ -190,7 +190,7 @@ def prepare(repository: str, workspace: Path, config: RunConfig, create_pr: bool
     save(manifest_path, manifest)
     try:
         project = workspace / "repo"
-        command(["git", "clone", "--", f"https://github.com/{repository}.git", str(project)], workspace)
+        command(["git", "-c", "core.autocrlf=false", "clone", "--", f"https://github.com/{repository}.git", str(project)], workspace)
         command(["git", "config", "core.autocrlf", "false"], project)
         base_sha = command(["git", "rev-parse", "HEAD"], project)
         branch = command(["git", "branch", "--show-current"], project)

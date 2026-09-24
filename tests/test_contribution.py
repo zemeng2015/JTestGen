@@ -171,6 +171,16 @@ class ContributionTests(unittest.TestCase):
                 prepare("a/b", workspace, RunConfig(self.repo))
         self.assertEqual(json.loads((workspace / "contribution.json").read_text())["status"], "failed")
 
+    def test_clone_disables_autocrlf_before_initial_checkout(self):
+        workspace = self.workspace / "clone-check"
+        with patch("javatestgen.contribution.command", side_effect=ContributionError("stop after clone args")) as mocked:
+            with self.assertRaises(ContributionError):
+                prepare("a/b", workspace, RunConfig(self.repo))
+        self.assertEqual(mocked.call_args.args[0], [
+            "git", "-c", "core.autocrlf=false", "clone", "--",
+            "https://github.com/a/b.git", str(workspace / "repo"),
+        ])
+
     def test_stale_coverage_and_surefire_are_cleared_and_skips_do_not_count(self):
         xml = self.repo / "target/site/jacoco/jacoco.xml"
         xml.parent.mkdir(parents=True)
