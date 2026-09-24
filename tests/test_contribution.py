@@ -116,6 +116,7 @@ class ContributionTests(unittest.TestCase):
                     return json.dumps([dict(url="https://github.com/example/project/pull/1", state="OPEN", headRefOid=sha)])
                 return "[]"
             if argv[:3] == ["gh", "repo", "fork"]:
+                self.assertEqual(argv, ["gh", "repo", "fork", "example/project", "--clone=false"])
                 return ""
             if argv[:2] == ["gh", "api"]:
                 return json.dumps(dict(fork=True, parent=dict(full_name="example/project")))

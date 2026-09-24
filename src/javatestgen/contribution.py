@@ -264,7 +264,7 @@ def publish(manifest_path: Path) -> int:
             save(manifest_path, manifest)
         validate(manifest_path)
         validate_commit(manifest, project)
-        command(["gh", "repo", "fork", repository, "--clone=false", "--remote=false"], project)
+        command(["gh", "repo", "fork", repository, "--clone=false"], project)
         fork = json.loads(command(["gh", "api", f"repos/{login}/{repository.split('/')[1]}"], project))
         if not fork.get("fork") or fork.get("parent", {}).get("full_name", "").lower() != repository.lower():
             raise ContributionError("Destination is not a fork of the target repository.")

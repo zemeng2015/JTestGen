@@ -95,3 +95,20 @@ formatter writing native CRLF on Windows does not make unchanged source files
 appear modified. Commit validation permits only CRLF-to-LF normalization of the
 verified test bytes. Other whitespace/content changes and arbitrary clean-filter
 transformations remain blocked; local manifest SHA-256 still binds exact bytes.
+
+## Real repository validation
+
+The workflow was exercised against `java-diff-utils/java-diff-utils` at
+`06438525cfb139ecf813312ff7305b847dd569b9`, selecting module `java-diff-utils`
+and class `com.github.difflib.patch.Chunk`, using JDK 17, Maven 3.9.11,
+`--generator codex --jacoco`, and constructor-focused generation rules.
+Five generated tests passed with no repair; the final module suite executed
+152 tests. Class line coverage increased from 31/46 to 38/46; module line
+coverage increased from 1428/1588 to 1435/1588. The product's `publish`
+command created the test-only draft PR:
+https://github.com/java-diff-utils/java-diff-utils/pull/235
+
+This is one verified repository/module combination, not a claim of compatibility
+with every Maven project or acceptance by the upstream maintainers. The source
+includes Windows log decoding and formatter line-ending regressions found
+while exercising this flow.
