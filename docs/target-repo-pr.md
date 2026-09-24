@@ -90,3 +90,8 @@ non-skipped executed test cases, including the generated class in the final suit
 Symlink/junction paths are rejected before artifact writes and cleanup. The actual
 Git commit's tree and blob bytes are validated before push so hooks or clean
 filters cannot silently publish a different file than the verified candidate.
+The isolated clone uses `core.autocrlf=input` from the initial checkout: a Maven
+formatter writing native CRLF on Windows does not make unchanged source files
+appear modified. Commit validation permits only CRLF-to-LF normalization of the
+verified test bytes. Other whitespace/content changes and arbitrary clean-filter
+transformations remain blocked; local manifest SHA-256 still binds exact bytes.

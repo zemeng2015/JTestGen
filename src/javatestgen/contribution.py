@@ -190,8 +190,8 @@ def prepare(repository: str, workspace: Path, config: RunConfig, create_pr: bool
     save(manifest_path, manifest)
     try:
         project = workspace / "repo"
-        command(["git", "-c", "core.autocrlf=false", "clone", "--", f"https://github.com/{repository}.git", str(project)], workspace)
-        command(["git", "config", "core.autocrlf", "false"], project)
+        command(["git", "-c", "core.autocrlf=input", "clone", "--", f"https://github.com/{repository}.git", str(project)], workspace)
+        command(["git", "config", "core.autocrlf", "input"], project)
         base_sha = command(["git", "rev-parse", "HEAD"], project)
         branch = command(["git", "branch", "--show-current"], project)
         if not branch:
@@ -298,7 +298,17 @@ def validate_commit(manifest: dict, project: Path) -> None:
         raise ContributionError("Actual commit contains files outside the verified tests.")
     for relative in manifest["files"]:
         path = test_path(project, relative, manifest.get("module", "."))
-        expected_blob = command(["git", "hash-object", "--no-filters", str(path)], project)
+        # Maven formatters may write native CRLF on Windows. Git's input mode
+        # normalizes only those line endings; never delegate validation to clean
+        # filters, which could silently replace arbitrary verified content.
+        raw_content = path.read_bytes()
+        algorithm = command(["git", "rev-parse", "--show-object-format"], project)
+        if algorithm not in ("sha1", "sha256"):
+            raise ContributionError("Unsupported Git object format.")
+        expected_blobs = {
+            hashlib.new(algorithm, b"blob " + str(len(content)).encode("ascii") + b"\0" + content).hexdigest()
+            for content in (raw_content, raw_content.replace(b"\r\n", b"\n"))
+        }
         tree = command(["git", "ls-tree", commit, "--", relative], project).split()
-        if len(tree) < 3 or tree[0] != "100644" or tree[1] != "blob" or tree[2] != expected_blob:
+        if len(tree) < 3 or tree[0] != "100644" or tree[1] != "blob" or tree[2] not in expected_blobs:
             raise ContributionError("Committed test bytes differ from the verified test (hook/filter may have changed them).")

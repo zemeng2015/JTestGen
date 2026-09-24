@@ -171,13 +171,13 @@ class ContributionTests(unittest.TestCase):
                 prepare("a/b", workspace, RunConfig(self.repo))
         self.assertEqual(json.loads((workspace / "contribution.json").read_text())["status"], "failed")
 
-    def test_clone_disables_autocrlf_before_initial_checkout(self):
+    def test_clone_sets_input_autocrlf_before_initial_checkout(self):
         workspace = self.workspace / "clone-check"
         with patch("javatestgen.contribution.command", side_effect=ContributionError("stop after clone args")) as mocked:
             with self.assertRaises(ContributionError):
                 prepare("a/b", workspace, RunConfig(self.repo))
         self.assertEqual(mocked.call_args.args[0], [
-            "git", "-c", "core.autocrlf=false", "clone", "--",
+            "git", "-c", "core.autocrlf=input", "clone", "--",
             "https://github.com/a/b.git", str(workspace / "repo"),
         ])
 
@@ -217,6 +217,40 @@ class ContributionTests(unittest.TestCase):
         self.test.write_bytes(original)
         with self.assertRaisesRegex(ContributionError, "Committed test bytes"):
             validate_commit(self.manifest, self.repo)
+
+    def test_formatter_crlf_normalizes_without_accepting_changed_content(self):
+        command(["git", "config", "core.autocrlf", "input"], self.repo)
+        # Simulate a native-line-ending formatter rewriting tracked production
+        # files and the generated test, without any semantic content change.
+        baseline = self.repo / "baseline.java"
+        baseline.write_bytes(b"class Baseline {\n}\n")
+        command(["git", "add", "baseline.java"], self.repo)
+        command(["git", "commit", "-m", "LF baseline"], self.repo)
+        self.manifest["base_sha"] = command(["git", "rev-parse", "HEAD"], self.repo)
+        baseline.write_bytes(b"class Baseline {\r\n}\r\n")
+        self.test.write_bytes(b"class ExampleJTestGenTest {}\r\n")
+        self.manifest["files"][self.relative] = digest(self.test)
+        save(self.manifest_path, self.manifest)
+        validate(self.manifest_path)
+        command(["git", "add", self.relative], self.repo)
+        command(["git", "commit", "-m", "normalized generated test"], self.repo)
+        self.manifest["commit_sha"] = command(["git", "rev-parse", "HEAD"], self.repo)
+        validate_commit(self.manifest, self.repo)
+        self.test.write_bytes(b"class MaliciousChange {}\r\n")
+        with self.assertRaisesRegex(ContributionError, "Committed test bytes"):
+            validate_commit(self.manifest, self.repo)
+
+    def test_upstream_no_text_attribute_preserves_verified_crlf_bytes(self):
+        command(["git", "config", "core.autocrlf", "input"], self.repo)
+        (self.repo / ".gitattributes").write_bytes(b"*.java -text\n")
+        command(["git", "add", ".gitattributes"], self.repo)
+        command(["git", "commit", "-m", "upstream attributes"], self.repo)
+        self.manifest["base_sha"] = command(["git", "rev-parse", "HEAD"], self.repo)
+        self.test.write_bytes(b"class ExampleJTestGenTest {}\r\n")
+        command(["git", "add", self.relative], self.repo)
+        command(["git", "commit", "-m", "raw CRLF generated test"], self.repo)
+        self.manifest["commit_sha"] = command(["git", "rev-parse", "HEAD"], self.repo)
+        validate_commit(self.manifest, self.repo)
 
     def test_receipt_lost_after_commit_is_recovered_only_on_bound_branch(self):
         command(["git", "switch", "-c", self.manifest["branch"]], self.repo)
