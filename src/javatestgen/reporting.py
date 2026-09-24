@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from html import escape
 from pathlib import Path
 from typing import Any
+from .path_safety import require_project_path
 
 
 @dataclass
@@ -29,6 +30,11 @@ class RunReport:
     prompt_versions: dict[str, str] = field(default_factory=dict)
     artifacts: dict[str, str] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
+    baseline_verified: bool = False
+    generated_verified: bool = False
+    final_verified: bool = False
+    generated_tests_executed: int = 0
+    final_tests_executed: int = 0
 
 
 class RunArtifacts:
@@ -37,6 +43,8 @@ class RunArtifacts:
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
         self.run_id = f"{timestamp}-{uuid.uuid4().hex[:8]}"
         self.root = project / ".jtestgen" / "runs" / self.run_id
+        require_project_path(project, self.root)
+        self.project = project
         self.report = RunReport(run_id=self.run_id, project=str(project))
         if self.enabled:
             self.root.mkdir(parents=True, exist_ok=True)
@@ -45,6 +53,7 @@ class RunArtifacts:
         if not self.enabled:
             return
         path = self.root / name
+        require_project_path(self.project, path)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text, encoding="utf-8")
         self.report.artifacts[name] = str(path)
@@ -61,9 +70,12 @@ class RunArtifacts:
     def flush(self) -> None:
         if not self.enabled:
             return
+        require_project_path(self.project, self.root)
         report_path = self.root / "report.json"
         summary_path = self.root / "summary.md"
         html_path = self.root / "report.html"
+        for path in (report_path, summary_path, html_path):
+            require_project_path(self.project, path)
         self.report.artifacts["report.json"] = str(report_path)
         self.report.artifacts["summary.md"] = str(summary_path)
         self.report.artifacts["report.html"] = str(html_path)

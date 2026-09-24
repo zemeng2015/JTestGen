@@ -25,6 +25,19 @@ JTestGen helps teams remediate coverage gaps systematically.
 
 ## What You Get
 
+### Prepare or publish a contribution from a GitHub repository
+
+```sh
+java-testgen contribute owner/repo --workspace ./new-contribution --jacoco
+java-testgen publish ./new-contribution/contribution.json
+```
+
+Preparation clones into a new directory and requires passing checks, a test-only
+diff and measured coverage improvement. Review the local evidence before
+`publish`, or explicitly add `--create-pr` for an end-to-end draft PR. Use
+`--module core` for a selected Maven module and `--generator codex` for the local
+Codex CLI. [Scope, prerequisites and retry behavior](docs/target-repo-pr.md).
+
 For each successful run, JTestGen produces:
 
 - selected target class and baseline coverage

@@ -41,6 +41,22 @@ def build_parser() -> argparse.ArgumentParser:
 
     run = subparsers.add_parser("run", help="Run generation, coverage, and repair loop.")
     run.add_argument("project", type=Path, help="Path to the target Maven Java project.")
+    add_generation_arguments(run)
+    contribute = subparsers.add_parser("contribute", help="Clone a GitHub repo and prepare a verified test contribution.")
+    contribute.add_argument("repository")
+    contribute.add_argument("--workspace", type=Path, required=True, help="New directory; existing directories are never overwritten.")
+    contribute.add_argument("--module", default=".", help="One Maven module relative to the repository root.")
+    contribute.add_argument("--create-pr", action="store_true", help="Explicitly publish a draft PR after successful verification.")
+    add_generation_arguments(contribute)
+    contribute.set_defaults(test_suffix="JTestGenTest")
+    publish = subparsers.add_parser("publish", help="Publish a previously verified contribution as a draft PR.")
+    publish.add_argument("manifest", type=Path)
+    return parser
+
+
+def add_generation_arguments(run: argparse.ArgumentParser) -> None:
+    run.add_argument("--generator", choices=("openai", "codex"), default="openai", help="Generation provider.")
+    run.add_argument("--jacoco", action="store_true", help="Run pinned JaCoCo prepare-agent before verification and report after it.")
     run.add_argument("--class-glob", default="**/*.java", help="Glob under src/main/java.")
     run.add_argument("--target-coverage", type=float, default=0.80, help="Required line coverage ratio.")
     run.add_argument("--max-repairs", type=int, default=3, help="Repair attempts per generated test.")
@@ -64,7 +80,6 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--dry-run", action="store_true", help="Print prompts without writing or running tests.")
     run.add_argument("--max-targets", type=int, default=1, help="Maximum number of automatically selected target classes to process.")
     run.add_argument("--patch-output", type=Path, default=None, help="Write a git patch for generated tests after a successful run.")
-    return parser
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -73,11 +88,18 @@ def main(argv: list[str] | None = None) -> int:
         return run_doctor(args.project.resolve(), args.maven_command)
     if args.command == "scan":
         return run_scan(args)
-    if args.command != "run":
+    if args.command == "publish":
+        from .contribution import publish
+        try:
+            return publish(args.manifest.resolve())
+        except (ValueError, OSError, KeyError) as exc:
+            print(f"Contribution failed: {exc}", file=sys.stderr)
+            return 1
+    if args.command not in ("run", "contribute"):
         raise AssertionError(f"Unhandled command: {args.command}")
 
     config = RunConfig(
-        project=args.project.resolve(),
+        project=args.project.resolve() if args.command == "run" else args.workspace.resolve() / "repo",
         class_glob=args.class_glob,
         target_coverage=args.target_coverage,
         max_repairs=args.max_repairs,
@@ -92,15 +114,27 @@ def main(argv: list[str] | None = None) -> int:
         dry_run=args.dry_run,
         max_targets=args.max_targets,
         patch_output=args.patch_output.resolve() if args.patch_output else None,
+        jacoco=args.jacoco,
+        generator=args.generator,
     )
 
+    if args.command == "contribute":
+        from .contribution import prepare
+        try:
+            return prepare(args.repository, args.workspace.resolve(), config, args.create_pr, args.module)
+        except (ValueError, OSError, KeyError) as exc:
+            print(f"Contribution failed: {exc}", file=sys.stderr)
+            return 1
+
+    from .contribution import make_generator
     workflow = TestGenerationWorkflow(
         config=config,
-        generator=OpenAICompatibleGenerator(model_override=config.model),
+        generator=make_generator(config),
         runner=MavenRunner(
             config.project,
             maven_command=config.maven_command,
             verify_args=config.verify_args,
+            jacoco=config.jacoco,
         ),
     )
     return workflow.run()
