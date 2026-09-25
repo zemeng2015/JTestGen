@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import subprocess
 import time
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from .config import RunConfig
@@ -12,6 +13,7 @@ from .generator import GenerationError, OpenAICompatibleGenerator
 from .java_source import JavaClass, discover_java_classes, find_java_class, find_java_class_by_name
 from .prompting import GENERATION_PROMPT_VERSION, REPAIR_PROMPT_VERSION, build_initial_request, build_repair_request
 from .reporting import RunArtifacts
+from .path_safety import require_project_path
 from .runner import MavenRunner
 from .targeting import build_target_candidates, pick_target_candidate, rank_target_candidates
 
@@ -48,6 +50,8 @@ class TestGenerationWorkflow:
             return 1
 
         print("Running baseline coverage: mvn -q verify")
+        if self.config.strict_verification:
+            clear_coverage_evidence(self.config.project)
         baseline_result = self.runner.verify()
         self.artifacts.write_text("maven.baseline.log", baseline_result.output)
         if not baseline_result.ok:
@@ -58,6 +62,7 @@ class TestGenerationWorkflow:
             self._finish(status="baseline_failed", started=started)
             return 1
 
+        self.artifacts.update(baseline_verified=True)
         baseline_summary = parse_jacoco_xml(self.config.jacoco_xml)
         baseline_coverages = parse_class_coverages(self.config.jacoco_xml)
         selected_targets = self._select_target_classes(classes, baseline_coverages)
@@ -89,6 +94,9 @@ class TestGenerationWorkflow:
             processed.append((java_class, class_coverage))
 
         print("Running final coverage: mvn -q verify")
+        if self.config.strict_verification:
+            clear_coverage_evidence(self.config.project)
+            clear_test_evidence(self.config.project)
         final_result = self.runner.verify()
         self.artifacts.write_text("maven.final.log", final_result.output)
         if not final_result.ok:
@@ -99,6 +107,14 @@ class TestGenerationWorkflow:
             self._finish(status="final_verify_failed", started=started)
             return 1
 
+        if self.config.strict_verification:
+            count = executed_tests(self.config.project)
+            if count <= 0 or any(executed_tests(self.config.project, path.stem) <= 0 for path in generated_paths):
+                self.artifacts.add_error("Final verification has no fresh passing executed Surefire tests.")
+                self._finish(status="final_evidence_missing", started=started)
+                return 1
+            self.artifacts.update(final_tests_executed=count)
+        self.artifacts.update(final_verified=True)
         final_summary = parse_jacoco_xml(self.config.jacoco_xml)
         final_coverages = parse_class_coverages(self.config.jacoco_xml)
         first_final_coverage = self._find_class_coverage(first_class, final_coverages)
@@ -207,15 +223,27 @@ class TestGenerationWorkflow:
             generated = clean_java_source(self.generator.generate(request))
         except GenerationError as exc:
             print(exc)
+            self.artifacts.update(status="generation_failed")
+            self.artifacts.add_error(str(exc))
             return None
 
-        write_test(test_path, generated)
+        write_test(test_path, generated, self.config.project)
         self.artifacts.write_text(f"{artifact_prefix}generated.initial.java", generated)
 
         for attempt in range(self.config.max_repairs + 1):
+            if self.config.strict_verification:
+                clear_test_evidence(self.config.project, test_class_name)
             result = self.runner.test_generated_class(test_class_name)
             self.artifacts.write_text(f"{artifact_prefix}maven.test.{attempt}.log", result.output)
             if result.ok:
+                if self.config.strict_verification:
+                    count = executed_tests(self.config.project, test_class_name)
+                    if count <= 0:
+                        self.artifacts.update(status="generated_evidence_missing")
+                        self.artifacts.add_error("Generated test command produced no fresh passing executed Surefire tests.")
+                        return None
+                    self.artifacts.update(generated_tests_executed=count)
+                self.artifacts.update(generated_verified=True)
                 print(f"Generated test passed: mvn -q -Dtest={test_class_name} test")
                 self.artifacts.write_text(f"{artifact_prefix}generated.final.java", test_path.read_text(encoding="utf-8"))
                 return test_path
@@ -246,9 +274,10 @@ class TestGenerationWorkflow:
                 repaired = clean_java_source(self.generator.generate(repair_request))
             except GenerationError as exc:
                 print(exc)
+                self.artifacts.update(status="generation_failed")
                 self.artifacts.add_error(str(exc))
                 return None
-            write_test(test_path, repaired)
+            write_test(test_path, repaired, self.config.project)
             self.artifacts.write_text(f"{artifact_prefix}generated.repair.{attempt + 1}.java", repaired)
         return None
 
@@ -286,9 +315,51 @@ class TestGenerationWorkflow:
         print(f"Patch written to: {output_path}")
 
 
-def write_test(path: Path, source: str) -> None:
+def write_test(path: Path, source: str, project: Path | None = None) -> None:
+    if project is not None:
+        require_project_path(project, path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(source.rstrip() + "\n", encoding="utf-8")
+    path.write_text(source.rstrip() + "\n", encoding="utf-8", newline="\n")
+
+
+def clear_coverage_evidence(project: Path) -> None:
+    for relative in ("target/site/jacoco/jacoco.xml", "target/jacoco.exec"):
+        path = project / relative
+        require_project_path(project, path)
+        path.unlink(missing_ok=True)
+
+
+def test_report_paths(project: Path, class_name: str | None = None) -> list[Path]:
+    directory = project / "target/surefire-reports"
+    require_project_path(project, directory)
+    paths = list(directory.glob("TEST-*.xml"))
+    if class_name:
+        paths = [p for p in paths if p.stem.removeprefix("TEST-").split(".")[-1] == class_name]
+    return paths
+
+
+def clear_test_evidence(project: Path, class_name: str | None = None) -> None:
+    for path in test_report_paths(project, class_name):
+        require_project_path(project, path)
+        path.unlink()
+
+
+def executed_tests(project: Path, class_name: str | None = None) -> int:
+    count = 0
+    for path in test_report_paths(project, class_name):
+        if path.is_symlink():
+            return 0
+        try:
+            root = ET.parse(path).getroot()
+        except ET.ParseError:
+            return 0
+        if any(int(suite.get("failures", "0")) or int(suite.get("errors", "0")) for suite in root.iter("testsuite")):
+            return 0
+        cases = list(root.iter("testcase"))
+        if any(case.find("failure") is not None or case.find("error") is not None for case in cases):
+            return 0
+        count += sum(case.find("skipped") is None for case in cases)
+    return count
 
 
 def clean_java_source(source: str) -> str:

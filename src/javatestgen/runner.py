@@ -23,28 +23,40 @@ class MavenRunner:
         project: Path,
         maven_command: str | None = None,
         verify_args: tuple[str, ...] = (),
+        jacoco: bool = False,
     ) -> None:
         self.project = project
         self.maven_command = resolve_maven_command(maven_command)
         self.verify_args = list(verify_args)
+        self.jacoco = jacoco
+
+    def _verify_argv(self) -> list[str]:
+        goals = ["org.jacoco:jacoco-maven-plugin:0.8.14:prepare-agent", "verify", "org.jacoco:jacoco-maven-plugin:0.8.14:report"] if self.jacoco else ["verify"]
+        return [self.maven_command, "-q", *self.verify_args, *goals]
+
+    def _test_argv(self, name: str) -> list[str]:
+        goals = ["org.jacoco:jacoco-maven-plugin:0.8.14:prepare-agent"] if self.jacoco else []
+        return [self.maven_command, "-q", *self.verify_args, *goals, f"-Dtest={name}", "test"]
 
     def verify(self) -> CommandResult:
-        return self._run([self.maven_command, "-q", *self.verify_args, "verify"])
+        return self._run(self._verify_argv())
 
     def verify_command(self) -> str:
-        return " ".join([self.maven_command, "-q", *self.verify_args, "verify"])
+        return " ".join(self._verify_argv())
 
     def test_generated_class(self, test_class_name: str) -> CommandResult:
-        return self._run([self.maven_command, "-q", *self.verify_args, f"-Dtest={test_class_name}", "test"])
+        return self._run(self._test_argv(test_class_name))
 
     def test_generated_class_command(self, test_class_name: str) -> str:
-        return " ".join([self.maven_command, "-q", *self.verify_args, f"-Dtest={test_class_name}", "test"])
+        return " ".join(self._test_argv(test_class_name))
 
     def _run(self, command: list[str]) -> CommandResult:
         completed = subprocess.run(
             command,
             cwd=self.project,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             check=False,

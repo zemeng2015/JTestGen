@@ -21,6 +21,9 @@ class RunConfig:
     dry_run: bool = False
     max_targets: int = 1
     patch_output: Path | None = None
+    jacoco: bool = False
+    generator: str = "openai"
+    strict_verification: bool = False
 
     @property
     def main_source_root(self) -> Path:

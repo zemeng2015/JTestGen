@@ -1,5 +1,18 @@
 # JTestGen
 
+## 从 GitHub 仓库生成带总结的草稿 PR
+
+```sh
+java-testgen contribute owner/repo --workspace ./new-contribution --jacoco
+java-testgen publish ./new-contribution/contribution.json
+```
+
+第一步克隆到全新目录，完成基线、生成测试与最终 Maven 验证，要求覆盖率实际提升且仅修改测试。
+审核本地证据后用 `publish` 发布，或明确添加 `--create-pr` 一次完成草稿 PR。
+支持 `--module core` 选择单个 Maven 模块，`--generator codex` 使用本地 Codex CLI。
+不会自动合并或强推；失败保留证据，发布重试会检查已有 PR，避免重复。
+详见[使用范围、环境要求与恢复说明](docs/target-repo-pr.md)。
+
 [English](README.md) | [中文说明](README.zh-CN.md)
 
 面向 Java 团队的 AI 覆盖率修复 Agent。
